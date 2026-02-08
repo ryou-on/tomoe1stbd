@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ともえの生誕祭</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🎂</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;500;700&family=M+PLUS+Rounded+1c:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-storage-compat.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bounce2{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fin{animation:fadeIn .4s ease-out}
+.sb{animation:bounce2 2.5s ease-in-out infinite}
+.animate-spin{animation:spin 1s linear infinite}
+.animate-pulse{animation:pulse 2s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// Firebase 設定 — ここを自分の値に書き換える
+// ══════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "123456789",
+  appId:             "1:123456789:web:abcdef"
+};
+
+// Claude API Key（空欄でもフォールバックテンプレートで動作）
+const CLAUDE_API_KEY = "";
+
+// Firebase 初期化
+let db, auth, storage, fbReady = false;
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.firestore();
+  auth = firebase.auth();
+  storage = firebase.storage();
+  auth.signInAnonymously().catch(e => console.warn("Auth:", e));
+  fbReady = true;
+} catch(e) { console.warn("Firebase not configured, using local mode:", e); }
+</script>
+
+<script>
+// ══════════════════════════════════════════════
+// SVG アイコン定義
+// ══════════════════════════════════════════════
+const ICONS = {
+  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  calendar: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
+  'map-pin': '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  send: '<line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  gift: '<polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7"/><line x1="12" x2="12" y1="22" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
+  play: '<polygon points="5 3 19 12 5 21 5 3"/>',
+  x: '<line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/>',
+  plus: '<line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/>',
+  'message-square': '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  quote: '<path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z"/>',
+  settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  unlock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
+  'external-link': '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/>',
+  mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  trash2: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  'alert-circle': '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+  share2: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
+  'chevron-down': '<polyline points="6 9 12 15 18 9"/>',
+  palette: '<circle cx="13.5" cy="6.5" r="0.5" fill="currentColor"/><circle cx="17.5" cy="10.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="7.5" r="0.5" fill="currentColor"/><circle cx="6.5" cy="12" r="0.5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>',
+  'help-circle': '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/>',
+  database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>',
+  newspaper: '<path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/>',
+  'list-todo': '<rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><line x1="13" x2="21" y1="6" y2="6"/><line x1="13" x2="21" y1="12" y2="12"/><line x1="13" x2="21" y1="18" y2="18"/>',
+  'file-up': '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/>',
+  check: '<polyline points="20 6 9 17 4 12"/>',
+  sparkles: '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>',
+  loader2: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+  'check-circle-2': '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  'mail-open': '<path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z"/><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"/>',
+  'refresh-cw': '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  menu: '<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>',
+  wand2: '<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/>',
+  pencil: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>'
+};
+</script>
+
+
+<script type="text/babel">
+// ══════════════════════════════════════════════
+// Icon Component
+// ══════════════════════════════════════════════
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+function I({ name, size=24, className='', fill='none', style={}, onClick }) {
+  const html = ICONS[name] || '';
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style} onClick={onClick} dangerouslySetInnerHTML={{__html:html}}/>;
+}
+
+// ══════════════════════════════════════════════
+// Firestore データ層 (compat API)
+// ══════════════════════════════════════════════
+const SCHEMA_VERSION = 1;
+const DEFAULT_CONFIG = {
+  name:'ともえ', heroSub:'A Special Day for Our Little Princess',
+  eventDate:'2026-02-11', birthDate:'2025-02-11',
+  venue:'新大塚第3シカゴマンション1階', address:'東京都豊島区南大塚2丁目17-8',
+  amazonUrl:'https://www.amazon.jp/hz/wishlist/ls/3OUWEIUUHU024?ref_=wl_share',
+  adminId:'20250211', adminPass:'20250211',
+  announcement:'', rsvpDeadline:'2026-12-31',
+  color:'#be123c', style:'elegant', topImg:'',
+  senderName:'ともえの両親', autoReplyEnabled:true,
+  schemaVersion: SCHEMA_VERSION,
+};
+const DEFAULT_SCHED = [
+  {id:'s1',time:'11:00',title:'受付開始'},
+  {id:'s2',time:'11:30',title:'一升餅・選び取り'},
+  {id:'s3',time:'12:00',title:'お食事タイム'},
+  {id:'s4',time:'13:00',title:'ケーキ＆記念撮影'},
+];
+const DEFAULT_MSGS = [
+  {id:'m1',name:'おばあちゃん',text:'ともえちゃん、お誕生日おめでとう！元気にすくすく育ってね。',ts:'2026-01-20T10:00:00'},
+  {id:'m2',name:'たくや叔父さん',text:'1歳おめでとう！これからもたくさん笑顔を見せてね。プレゼント楽しみにしてて！',ts:'2026-01-25T14:30:00'},
+];
+
+function useFirestoreData() {
+  const [cfg, setCfg]     = useState(DEFAULT_CONFIG);
+  const [rsvps, setRsvps] = useState([]);
+  const [msgs, setMsgs]   = useState(DEFAULT_MSGS);
+  const [photos, setPhotos] = useState([]);
+  const [sched, setSched] = useState(DEFAULT_SCHED);
+  const [news, setNews]   = useState([]);
+  const [emailDrafts, setEmailDrafts] = useState([]);
+  const [ready, setReady] = useState(false);
+  const initRef = useRef(false);
+
+  const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+  useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+
+    if (!fbReady || !db) { setReady(true); return; }
+
+    const unsubs = [];
+    const init = async () => {
+      const cfgRef = db.collection('app').doc('config');
+      const snap = await cfgRef.get();
+      if (!snap.exists) {
+        await cfgRef.set(DEFAULT_CONFIG);
+        const batch = db.batch();
+        DEFAULT_SCHED.forEach(s => batch.set(db.collection('schedule').doc(s.id), s));
+        DEFAULT_MSGS.forEach(m => batch.set(db.collection('messages').doc(m.id), m));
+        await batch.commit();
+      }
+      unsubs.push(cfgRef.onSnapshot(s => { if(s.exists) setCfg(p=>({...DEFAULT_CONFIG,...s.data()})); }));
+      const sub = (col,setter) => { unsubs.push(db.collection(col).onSnapshot(s => { setter(s.docs.map(d=>({id:d.id,...d.data()}))); })); };
+      sub('rsvps',setRsvps); sub('messages',setMsgs); sub('photos',setPhotos);
+      sub('schedule',setSched); sub('news',setNews); sub('emailDrafts',setEmailDrafts);
+      setReady(true);
+    };
+    init().catch(e => { console.error(e); setSched(DEFAULT_SCHED); setMsgs(DEFAULT_MSGS); setReady(true); });
+    return () => unsubs.forEach(u=>u());
+  }, []);
+
+  // ── 書き込みヘルパー（Firebase未設定時はローカルステート更新） ──
+  const updateConfig = useCallback(async(ch)=>{
+    if(db) try{await db.collection('app').doc('config').set(ch,{merge:true});}catch(e){setCfg(p=>({...p,...ch}));}
+    else setCfg(p=>({...p,...ch}));
+  },[]);
+
+  const addItem = useCallback(async(col,data,setter)=>{
+    const id=data.id||uid(); const d={...data,id,ts:data.ts||new Date().toISOString()};
+    if(db) try{await db.collection(col).doc(id).set(d);}catch(e){setter(p=>[...p,d]);}
+    else setter(p=>[...p,d]);
+    return id;
+  },[]);
+
+  const updateItem = useCallback(async(col,id,ch)=>{
+    if(db) try{await db.collection(col).doc(id).set(ch,{merge:true});}catch{}
+  },[]);
+
+  const deleteItem = useCallback(async(col,id,setter)=>{
+    if(db) try{await db.collection(col).doc(id).delete();}catch(e){setter(p=>p.filter(i=>i.id!==id));}
+    else setter(p=>p.filter(i=>i.id!==id));
+  },[]);
+
+  const uploadImage = useCallback(async(dataUrl,path)=>{
+    if(!storage) return dataUrl;
+    try{ const r=storage.ref(path); await r.putString(dataUrl,'data_url'); return await r.getDownloadURL(); }
+    catch{ return dataUrl; }
+  },[]);
+
+  // ── 公開API ──
+  const submitRsvp = useCallback(async({name,email,att,msg})=>{
+    const id=uid();
+    await addItem('rsvps',{id,name,email,att,msg},setRsvps);
+    if(msg) await addItem('messages',{id:uid(),name,text:msg},setMsgs);
+    return {id,name,email,att};
+  },[addItem]);
+
+  const submitMessage = useCallback(async({name,text})=> addItem('messages',{id:uid(),name,text},setMsgs),[addItem]);
+
+  const submitPhotos = useCallback(async(uName,imgs)=>{
+    for(const dataUrl of imgs){
+      const id=uid();
+      const url = await uploadImage(dataUrl,`photos/${id}.jpg`);
+      await addItem('photos',{id,uploader:uName,url,likes:0,storagePath:`photos/${id}.jpg`},setPhotos);
+    }
+  },[addItem,uploadImage]);
+
+  const likePhoto = useCallback(async(id,cur)=>{
+    if(db) await updateItem('photos',id,{likes:(cur||0)+1});
+    else setPhotos(p=>p.map(i=>i.id===id?{...i,likes:(i.likes||0)+1}:i));
+  },[updateItem]);
+
+  const addSchedule = useCallback(async(time,title)=>addItem('schedule',{id:uid(),time,title},setSched),[addItem]);
+  const updateSchedule = useCallback(async(id,time,title)=>{
+    if(db) await updateItem('schedule',id,{time,title});
+    else setSched(p=>p.map(s=>s.id===id?{...s,time,title}:s));
+  },[updateItem]);
+  const deleteSchedule = useCallback(async(id)=>deleteItem('schedule',id,setSched),[deleteItem]);
+
+  const addNews = useCallback(async(title,content)=>addItem('news',{id:uid(),title,content},setNews),[addItem]);
+  const deleteNews = useCallback(async(id)=>deleteItem('news',id,setNews),[deleteItem]);
+
+  const addEmailDraft = useCallback(async(d)=>addItem('emailDrafts',d,setEmailDrafts),[addItem]);
+  const updateEmailDraft = useCallback(async(id,ch)=>{
+    if(db) await updateItem('emailDrafts',id,ch);
+    else setEmailDrafts(p=>p.map(i=>i.id===id?{...i,...ch}:i));
+  },[updateItem]);
+  const deleteEmailDraft = useCallback(async(id)=>deleteItem('emailDrafts',id,setEmailDrafts),[deleteItem]);
+  const deleteRsvp = useCallback(async(id)=>{
+    const drafts=emailDrafts.filter(d=>d.rsvpId===id);
+    for(const d of drafts) await deleteItem('emailDrafts',d.id,setEmailDrafts);
+    await deleteItem('rsvps',id,setRsvps);
+  },[deleteItem,emailDrafts]);
+  const deleteMessage = useCallback(async(id)=>deleteItem('messages',id,setMsgs),[deleteItem]);
+  const deletePhoto = useCallback(async(id)=>deleteItem('photos',id,setPhotos),[deleteItem]);
+
+  const exportAll = useCallback(()=>({exportedAt:new Date().toISOString(),schemaVersion:SCHEMA_VERSION,cfg,rsvps,msgs,photos,sched,news,emailDrafts}),[cfg,rsvps,msgs,photos,sched,news,emailDrafts]);
+  const importAll = useCallback(async(data)=>{
+    if(db){
+      if(data.cfg) await db.collection('app').doc('config').set({...data.cfg,schemaVersion:SCHEMA_VERSION},{merge:true});
+      const imp=async(col,items)=>{for(const i of(items||[]))await db.collection(col).doc(i.id).set(i);};
+      await imp('rsvps',data.rsvps);await imp('messages',data.msgs);await imp('photos',data.photos);
+      await imp('schedule',data.sched);await imp('news',data.news);await imp('emailDrafts',data.emailDrafts);
+    } else {
+      if(data.cfg)setCfg(p=>({...p,...data.cfg}));
+      if(data.rsvps)setRsvps(data.rsvps);if(data.msgs)setMsgs(data.msgs);
+      if(data.photos)setPhotos(data.photos);if(data.sched)setSched(data.sched);
+      if(data.news)setNews(data.news);if(data.emailDrafts)setEmailDrafts(data.emailDrafts);
+    }
+  },[]);
+
+  return { cfg,rsvps,msgs,photos,sched,news,emailDrafts,ready,
+    updateConfig,submitRsvp,submitMessage,submitPhotos,likePhoto,
+    addSchedule,updateSchedule,deleteSchedule,addNews,deleteNews,
+    addEmailDraft,updateEmailDraft,deleteEmailDraft,deleteRsvp,deleteMessage,deletePhoto,
+    exportAll,importAll,uploadImage };
+}
+
+
+// ══════════════════════════════════════════════
+// 小部品
+// ══════════════════════════════════════════════
+const Tip = ({text}) => {
+  const [o,setO]=useState(false);
+  return <span className="relative inline-flex items-center ml-1">
+    <I name="help-circle" size={13} className="text-neutral-400 hover:text-rose-500 cursor-help" onClick={()=>setO(!o)} />
+    {o&&<span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 px-3 py-2 bg-neutral-900 text-white text-[11px] leading-relaxed rounded-lg shadow-xl z-[999] pointer-events-none">{text}<span className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-neutral-900"/></span>}
+  </span>;
+};
+const Toast = ({msg,onClose}) => {
+  useEffect(()=>{const t=setTimeout(onClose,3000);return()=>clearTimeout(t);},[onClose]);
+  return <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-neutral-900 text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-2xl flex items-center gap-2" style={{animation:'slideUp .3s ease-out'}}><I name="check" size={14} className="text-emerald-400"/>{msg}</div>;
+};
+const ST = ({title,sub,help}) => <div className="text-center mb-10"><h2 className="text-2xl md:text-3xl font-light tracking-tight text-neutral-900 mb-1.5">{title}{help&&<Tip text={help}/>}</h2>{sub&&<p className="text-[11px] font-semibold tracking-[.25em] uppercase text-neutral-400">{sub}</p>}</div>;
+const Fd = ({label,children}) => <div><div className="text-[11px] font-semibold text-neutral-500 mb-1 select-none">{label}</div>{children}</div>;
+
+// ══════════════════════════════════════════════
+// メインApp
+// ══════════════════════════════════════════════
+function App() {
+  const store = useFirestoreData();
+  const {cfg,rsvps,msgs,photos,sched,news,emailDrafts,ready,
+    updateConfig:sc,submitRsvp,submitMessage,submitPhotos,likePhoto,
+    addSchedule,updateSchedule,deleteSchedule,addNews,deleteNews,
+    addEmailDraft,updateEmailDraft,deleteEmailDraft,deleteRsvp,deleteMessage,deletePhoto,
+    exportAll,importAll,uploadImage} = store;
+
+  const [page,setPage]=useState('home');
+  const [toast,setToast]=useState(null);
+  const [isAdmin,setIsAdmin]=useState(false);
+  const [aTab,setATab]=useState('settings');
+  const [loginId,setLoginId]=useState('');
+  const [loginPw,setLoginPw]=useState('');
+  const [menuOpen,setMenuOpen]=useState(false);
+  const [hasRsvped,setHasRsvped]=useState(false);
+  const [genLoading,setGenLoading]=useState(null);
+  const [previewDraft,setPreviewDraft]=useState(null);
+  const [rName,setRName]=useState('');const [rEmail,setREmail]=useState('');
+  const [rAtt,setRAtt]=useState('yes');const [rMsg,setRMsg]=useState('');
+  const [mName,setMName]=useState('');const [mText,setMText]=useState('');
+  const [uName,setUName]=useState('');const [uImgs,setUImgs]=useState([]);
+  const [showMsg,setShowMsg]=useState(false);const [showUp,setShowUp]=useState(false);
+  const [slide,setSlide]=useState(-1);
+  const [aiRefining,setAiRefining]=useState(false);
+  const [aiResult,setAiResult]=useState(null);const [aiLoading,setAiLoading]=useState(false);
+  const [showSchedForm,setShowSchedForm]=useState(false);
+  const [newSchedTime,setNewSchedTime]=useState('');const [newSchedTitle,setNewSchedTitle]=useState('');
+  const [editSchedId,setEditSchedId]=useState(null);
+  const [editSchedTime,setEditSchedTime]=useState('');const [editSchedTitle,setEditSchedTitle]=useState('');
+  const [showNewsForm,setShowNewsForm]=useState(false);
+  const [newNewsTitle,setNewNewsTitle]=useState('');const [newNewsContent,setNewNewsContent]=useState('');
+  const [selGuests,setSelGuests]=useState([]);
+
+  const fileRef=useRef(null);const topRef=useRef(null);const impRef=useRef(null);
+  const notify=useCallback(m=>setToast(m),[]);
+
+  const T=useMemo(()=>{const s=cfg.style;return{
+    c:cfg.color||'#be123c',
+    font:s==='elegant'?"'Noto Serif JP',Georgia,serif":s==='playful'?"'M PLUS Rounded 1c',Nunito,sans-serif":"'Inter','Helvetica Neue',sans-serif",
+    r:s==='playful'?'1.25rem':s==='modern'?'.375rem':'.625rem',
+    cr:s==='playful'?'1.5rem':s==='modern'?'.5rem':'.875rem',
+  };},[cfg.color,cfg.style]);
+
+  const age=useMemo(()=>{const b=new Date(cfg.birthDate),e=new Date(cfg.eventDate);if(isNaN(b)||isNaN(e))return 0;let a=e.getFullYear()-b.getFullYear();if(e.getMonth()<b.getMonth()||(e.getMonth()===b.getMonth()&&e.getDate()<b.getDate()))a--;return Math.max(0,a);},[cfg.birthDate,cfg.eventDate]);
+  const closed=useMemo(()=>new Date()>new Date(cfg.rsvpDeadline),[cfg.rsvpDeadline]);
+  const mapUrl=`https://www.google.com/maps/search/${encodeURIComponent(cfg.address)}`;
+  const mapEmbed=`https://www.google.com/maps?q=${encodeURIComponent(cfg.address)}&output=embed`;
+  const slideItems=useMemo(()=>[...photos.map(p=>({...p,_t:'img'})),...msgs.map(m=>({...m,_t:'msg'}))].sort((a,b)=>new Date(b.ts||0)-new Date(a.ts||0)),[photos,msgs]);
+
+  useEffect(()=>{if(slide<0||!slideItems.length)return;const t=setInterval(()=>setSlide(p=>(p+1)%slideItems.length),6000);return()=>clearInterval(t);},[slide,slideItems.length]);
+
+  const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const compress=(file,q=0.45)=>new Promise(res=>{const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');const M=1200;let w=img.width,h=img.height;if(w>h){if(w>M){h*=M/w;w=M;}}else{if(h>M){w*=M/h;h=M;}}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);res(c.toDataURL('image/jpeg',q));};img.src=e.target.result;};r.readAsDataURL(file);});
+
+  const btnS={backgroundColor:T.c,borderRadius:T.r,color:'#fff'};
+  const iCls="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200/60 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-200";
+
+  /* Claude API */
+  const callAI=async(prompt)=>{
+    const h={"Content-Type":"application/json"};if(CLAUDE_API_KEY)h["x-api-key"]=CLAUDE_API_KEY;
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:h,body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
+    const d=await res.json();return(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+  };
+  const refineMsg=async()=>{if(!rMsg||rMsg.length<3)return;setAiRefining(true);try{setRMsg(await callAI(`以下のお祝いメッセージを温かみのある洗練された文章に校正。元の気持ちを大切に。校正後のみ出力:\n\n${rMsg}`));notify('AIが文章を整えました ✨');}catch{notify('AI校正に失敗');}finally{setAiRefining(false);}};
+
+  const genEmail=async(name,att)=>{
+    const schedT=[...sched].sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(s=>`  ${s.time} - ${s.title}`).join('\n');
+    const p=att==='yes'
+      ?`あなたは「${cfg.senderName}」です。${name}さんが${cfg.name}の${age}歳誕生日会に出席表明。感謝メールを日本語で。\n含める:\n- ${name}さんへの温かい感謝\n- 会場: ${cfg.venue}（${cfg.address}）\n- 地図: ${mapUrl}\n- 当日のスケジュール:\n${schedT}\n- 【重要】当日はオープンハウス形式です。いつ来ていつ退出しても構いません。ご都合の良い時間帯にお越しください。\n- 【注意】本人の体調や機嫌によりスケジュールが前後したり、予告なく中止になる場合があります。ご了承ください。\n- プレゼント: Amazon欲しいものリスト → ${cfg.amazonUrl}\nルール: 300文字程度、温かい文体、本文のみ、「${cfg.senderName}より」で締める`
+      :`あなたは「${cfg.senderName}」です。${name}さんが${cfg.name}の誕生日会に欠席返信。気遣いのある返信100文字程度。本文のみ。「${cfg.senderName}より」で締める。`;
+    try{return await callAI(p);}
+    catch{return att==='yes'?`${name}さん、ご出席ありがとうございます！\n\n📍${cfg.venue}（${cfg.address}）\n🗺️${mapUrl}\n\n当日はオープンハウス形式です。いつ来ていつ退出しても構いません。\n※本人の体調や機嫌によりスケジュールが変更になる場合がございます。\n\n🎁${cfg.amazonUrl}\n\n${cfg.senderName}より`:`${name}さん、お返事ありがとうございます。\n\n${cfg.senderName}より`;}
+  };
+  const autoGenDraft=async(rid,name,email,att)=>{if(!cfg.autoReplyEnabled||!email)return;setGenLoading(rid);try{const body=await genEmail(name,att);const subj=att==='yes'?`ご出席ありがとうございます🎉 ${cfg.name}の生誕祭`:`お返事ありがとうございます - ${cfg.name}の生誕祭`;await addEmailDraft({id:uid(),rsvpId:rid,name,email,att,body,subject:subj,status:'draft'});}catch{}finally{setGenLoading(null);}};
+  const openGmail=async(d)=>{window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(d.email)}&su=${encodeURIComponent(d.subject)}&body=${encodeURIComponent(d.body)}`,'_blank');await updateEmailDraft(d.id,{status:'sent',sentAt:new Date().toISOString()});notify(`${d.name}さんへのメールをGmailで開きました`);};
+  const regenDraft=async(id)=>{const d=emailDrafts.find(x=>x.id===id);if(!d)return;setGenLoading(d.rsvpId);try{const body=await genEmail(d.name,d.att);await updateEmailDraft(id,{body,status:'draft'});notify('再生成');}catch{notify('失敗');}finally{setGenLoading(null);}};
+  const aiTool=async(type)=>{setAiLoading(true);setAiResult(null);const prompts={future:`${cfg.name}ちゃんは今日${age}歳の誕生日。10年後の幸せな未来予想図を温かくユーモラスに300文字程度で日本語で。`,speech:`${cfg.name}の${age}歳誕生日会で${cfg.senderName}が述べる挨拶スピーチ原稿を400文字程度で。感謝と愛情が伝わる感動的な内容。`};try{setAiResult({type,text:await callAI(prompts[type])});}catch{notify('AI生成に失敗');}finally{setAiLoading(false);}};
+
+  /* Actions */
+  const go=(p)=>{setPage(p);setMenuOpen(false);window.scrollTo(0,0);};
+  const doLogin=()=>{if(loginId===cfg.adminId&&loginPw===cfg.adminPass){setIsAdmin(true);setPage('admin');notify('ログインしました');}else notify('IDまたはパスワードが違います');};
+  const doRsvp=async()=>{if(!rName||closed)return;const{id:rid,name:n,email:e,att:a}=await submitRsvp({name:rName,email:rEmail,att:rAtt,msg:rMsg});setRName('');setREmail('');setRAtt('yes');setRMsg('');setHasRsvped(true);go('telegram');notify(e&&cfg.autoReplyEnabled?'登録完了！お礼メールを準備中...':'登録ありがとうございます！');if(e&&cfg.autoReplyEnabled)autoGenDraft(rid,n,e,a);};
+  const doMsg=async()=>{if(!mName||!mText)return;await submitMessage({name:mName,text:mText});setMName('');setMText('');setShowMsg(false);go('telegram');notify('メッセージを送信しました');};
+  const doFiles=async e=>{const f=Array.from(e.target.files).slice(0,10);if(!f.length)return;setUImgs(await Promise.all(f.map(x=>compress(x))));};
+  const doUpload=async()=>{if(!uImgs.length||!uName)return;await submitPhotos(uName,uImgs);setUName('');setUImgs([]);setShowUp(false);notify('写真を共有しました');};
+  const doTopImg=async e=>{const f=e.target.files[0];if(!f)return;const d=await compress(f,0.5);const url=await uploadImage(d,'topImage/hero.jpg');sc({topImg:url});notify('更新');};
+  const doLike=(id)=>{const p=photos.find(x=>x.id===id);if(p)likePhoto(id,p.likes);};
+  const doAddSched=async()=>{if(!newSchedTime||!newSchedTitle)return;await addSchedule(newSchedTime,newSchedTitle);setNewSchedTime('');setNewSchedTitle('');setShowSchedForm(false);notify('追加');};
+  const startEditSched=(s)=>{setEditSchedId(s.id);setEditSchedTime(s.time);setEditSchedTitle(s.title);};
+  const saveEditSched=async()=>{if(!editSchedTime||!editSchedTitle)return;await updateSchedule(editSchedId,editSchedTime,editSchedTitle);setEditSchedId(null);notify('更新');};
+  const cancelEditSched=()=>setEditSchedId(null);
+  const doAddNews=async()=>{if(!newNewsTitle)return;await addNews(newNewsTitle,newNewsContent);setNewNewsTitle('');setNewNewsContent('');setShowNewsForm(false);notify('追加');};
+  const doExport=()=>{const data=exportAll();const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`tomoe_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();};
+  const doImport=async(e)=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async(ev)=>{try{await importAll(JSON.parse(ev.target.result));notify('復元');}catch{notify('無効');}};r.readAsText(f);};
+  const doBulkMail=()=>{const em=rsvps.filter(g=>selGuests.includes(g.id)&&g.email).map(g=>g.email).join(',');if(em)window.location.href=`mailto:${em}?subject=${encodeURIComponent(cfg.name+'の誕生日会')}`;};
+  const copyTxt=t=>{navigator.clipboard?.writeText(t);notify('コピーしました');};
+
+  const draftCt=emailDrafts.filter(d=>d.status==='draft').length;
+  const sentCt=emailDrafts.filter(d=>d.status==='sent').length;
+  const guestNavs=[{id:'home',icon:'calendar',l:'ホーム'},{id:'rsvp',icon:'send',l:'参加表明'},{id:'telegram',icon:'heart',l:'お祝い電報'},{id:'gallery',icon:'camera',l:'写真館'}];
+  const isGuestPage=['home','rsvp','telegram','gallery'].includes(page);
+
+  const Modal=({children,onClose,wide})=><div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}><div className="absolute inset-0 bg-black/60 backdrop-blur-sm"/><div className={`relative bg-white ${wide?'max-w-lg':'max-w-md'} w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto`} style={{borderRadius:T.cr}} onClick={e=>e.stopPropagation()}><button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 z-10"><I name="x" size={18}/></button>{children}</div></div>;
+
+  if(!ready) return <div className="min-h-screen flex items-center justify-center bg-neutral-50"><div className="text-center"><I name="loader2" size={32} className="animate-spin mx-auto mb-4" style={{color:cfg.color||'#be123c'}}/><p className="text-sm text-neutral-400">読み込み中...</p></div></div>;
+
+
+  // ═══ RENDER ═══
+  return (
+    <div className="min-h-screen bg-neutral-50 text-neutral-800" style={{fontFamily:T.font}}>
+      {cfg.announcement&&<div className="fixed top-0 inset-x-0 z-[50] text-white text-center py-2 px-4 text-xs font-semibold flex items-center justify-center gap-2" style={{backgroundColor:T.c}}><I name="bell" size={12} className="animate-pulse"/>{cfg.announcement}</div>}
+      {genLoading&&<div className="fixed top-2 left-1/2 -translate-x-1/2 z-[50] bg-white shadow-lg rounded-full px-4 py-2 flex items-center gap-2 text-xs font-semibold border"><I name="loader2" size={14} className="animate-spin" style={{color:T.c}}/><span className="text-neutral-600">AIメール作成中...</span></div>}
+
+      {/* PC タブナビ */}
+      {isGuestPage&&<nav className={`hidden md:block fixed top-0 inset-x-0 z-[80] bg-white border-b border-neutral-100 shadow-sm ${cfg.announcement?'mt-8':''}`}><div className="max-w-4xl mx-auto flex items-center justify-between px-6 h-14"><span className="text-sm font-semibold" style={{color:T.c}}>{cfg.name}の生誕祭</span><div className="flex gap-1">{guestNavs.map(n=><button key={n.id} onClick={()=>go(n.id)} className={`flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium rounded-lg transition-all ${page===n.id?'text-white shadow-md':'text-neutral-500 hover:bg-neutral-50'}`} style={page===n.id?{backgroundColor:T.c}:{}}><I name={n.icon} size={14}/>{n.l}</button>)}</div></div></nav>}
+
+      {/* モバイル ハンバーガー */}
+      {isGuestPage&&<button onClick={()=>setMenuOpen(!menuOpen)} className="md:hidden fixed top-3 right-3 z-[100] w-10 h-10 bg-white/90 backdrop-blur-lg rounded-full shadow-lg flex items-center justify-center border border-neutral-200">{menuOpen?<I name="x" size={18} className="text-neutral-700"/>:<I name="menu" size={18} className="text-neutral-700"/>}</button>}
+      {menuOpen&&<div className="md:hidden fixed inset-0 z-[90]"><div className="absolute inset-0 bg-black/30" onClick={()=>setMenuOpen(false)}/><div className="absolute right-0 top-0 h-full w-64 bg-white shadow-2xl flex flex-col" style={{animation:'fadeIn .15s ease-out'}}><div className="pt-16 px-6 pb-4"><p className="text-[10px] font-semibold tracking-[.3em] uppercase text-neutral-400 mb-4">MENU</p><nav className="space-y-1">{guestNavs.map(n=><button key={n.id} onClick={()=>go(n.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${page===n.id?'text-white shadow-md':'text-neutral-600 hover:bg-neutral-50'}`} style={page===n.id?{backgroundColor:T.c}:{}}><I name={n.icon} size={16}/>{n.l}</button>)}</nav></div><div className="mt-auto p-6 border-t border-neutral-100"><button onClick={()=>{if(navigator.share)navigator.share({title:`${cfg.name}の生誕祭`,url:location.href});else{navigator.clipboard?.writeText(location.href);notify('URLをコピー');}setMenuOpen(false);}} className="text-xs text-neutral-400 flex items-center gap-1.5 hover:text-neutral-600"><I name="share2" size={12}/> サイトをシェア</button></div></div></div>}
+
+      {/* 固定RSVPボタン */}
+      {!closed&&isGuestPage&&page!=='rsvp'&&<div className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[40]"><button onClick={()=>go('rsvp')} className="px-6 py-3 text-sm font-semibold shadow-2xl flex items-center gap-2 active:scale-95 transition-transform" style={btnS}><I name="send" size={14}/> 参加を表明する</button></div>}
+
+      <div className={`${cfg.announcement?'pt-8':''} ${isGuestPage?'md:pt-14':''} pb-24 md:pb-8`}>
+
+      {/* ═══ HOME ═══ */}
+      {page==='home'&&<div className="fin">
+        <div className="relative min-h-[92vh] md:min-h-[calc(100vh-3.5rem)] flex items-center justify-center overflow-hidden bg-white">
+          {cfg.topImg?<div className="absolute inset-0"><img src={cfg.topImg} className="w-full h-full object-cover opacity-25 scale-105 blur-[1px]" alt=""/><div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/30 to-neutral-50"/></div>:<div className="absolute inset-0 flex items-center justify-center opacity-[0.03]"><I name="heart" size={480} style={{color:T.c}}/></div>}
+          <div className="relative z-10 max-w-xl px-6 text-center">
+            <p className="tracking-[.5em] text-[11px] uppercase mb-5 font-medium" style={{color:T.c+'aa'}}>{cfg.heroSub}</p>
+            <h1 className="text-5xl md:text-8xl font-light text-neutral-900 mb-3 tracking-tight leading-none">{cfg.name}</h1>
+            <p className="text-2xl md:text-4xl font-light mb-10 tracking-tight" style={{color:T.c}}>{age}歳 おめでとう</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button onClick={()=>go('rsvp')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>参加を表明する</button>
+              <button onClick={()=>setShowMsg(true)} className="px-7 py-3.5 text-sm font-semibold bg-white border border-neutral-200 shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style={{borderRadius:T.r,color:T.c}}><I name="message-square" size={15}/> お祝いメッセージを送る</button>
+            </div>
+          </div>
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-neutral-400 sb"><span className="text-[10px] tracking-[.3em] uppercase font-medium">Scroll</span><I name="chevron-down" size={15}/></div>
+        </div>
+
+        {news.length>0&&<section className="max-w-3xl mx-auto px-5 py-16"><ST title="お知らせ" sub="Updates"/><div className="space-y-3">{[...news].sort((a,b)=>new Date(b.ts)-new Date(a.ts)).map(u=><div key={u.id} className="bg-white p-5 shadow-sm border border-neutral-100 flex items-start gap-3.5" style={{borderRadius:T.cr}}><div className="p-2 rounded-lg shrink-0" style={{backgroundColor:T.c+'10',color:T.c}}><I name="newspaper" size={16}/></div><div><h4 className="font-semibold text-neutral-900 text-sm mb-0.5">{u.title}</h4><p className="text-[13px] text-neutral-500 leading-relaxed">{u.content}</p><time className="text-[10px] text-neutral-300 mt-1 block">{new Date(u.ts).toLocaleDateString('ja-JP')}</time></div></div>)}</div></section>}
+
+        {sched.length>0&&<section className="max-w-3xl mx-auto px-5 py-16"><ST title="当日の流れ" sub="Schedule"/>
+          <div className="bg-white p-5 border border-neutral-100 shadow-sm mb-8 text-[13px] text-neutral-600 leading-relaxed" style={{borderRadius:T.cr}}><p className="mb-2">当日は<span className="font-semibold text-neutral-800">オープンハウス</span>形式です。いつ来ていつ退出されても構いません。ご都合の良い時間帯にお越しください。</p><p className="text-[11px] text-neutral-400">※ 本人の体調や機嫌により、スケジュールが前後したり予告なく中止になる場合がございます。ご了承ください。</p></div>
+          <div className="relative ml-3"><div className="absolute left-0 top-1 bottom-1 w-px" style={{backgroundColor:T.c+'20'}}/><div className="space-y-6">{[...sched].sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(s=><div key={s.id} className="relative pl-7"><div className="absolute left-0 top-1.5 w-2 h-2 rounded-full -translate-x-[calc(50%-.5px)] ring-[3px] ring-neutral-50" style={{backgroundColor:T.c}}/><div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-5"><time className="text-lg font-semibold tabular-nums" style={{color:T.c}}>{s.time}</time><span className="text-neutral-700 font-medium text-[15px]">{s.title}</span></div></div>)}</div></div>
+        </section>}
+
+        <section className="max-w-3xl mx-auto px-5 py-16"><div className={`grid grid-cols-1 ${hasRsvped||isAdmin?'md:grid-cols-2':''} gap-5`}>
+          {(hasRsvped||isAdmin)?<div className="bg-white shadow-sm border border-neutral-100 overflow-hidden" style={{borderRadius:T.cr}}><div className="p-6 text-center"><div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{backgroundColor:T.c+'08',color:T.c}}><I name="map-pin" size={22}/></div><h3 className="text-base font-semibold text-neutral-900 mb-1">会場</h3><p className="text-neutral-600 font-medium text-sm">{cfg.venue}</p><p className="text-neutral-400 text-xs mb-3">{cfg.address}</p><button onClick={()=>window.open(mapUrl)} className="text-xs font-semibold hover:underline flex items-center gap-1 mx-auto" style={{color:T.c}}>大きな地図で見る <I name="external-link" size={11}/></button></div><iframe src={mapEmbed} className="w-full h-48 border-0 border-t border-neutral-100" allowFullScreen loading="lazy" title="map"/></div>
+          :<div className="bg-white p-6 shadow-sm border border-neutral-100 text-center flex flex-col justify-center" style={{borderRadius:T.cr}}><div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{backgroundColor:T.c+'08',color:T.c}}><I name="map-pin" size={22}/></div><h3 className="text-base font-semibold text-neutral-900 mb-1">会場</h3><p className="text-neutral-500 text-xs mb-4">参加表明をしていただくと会場の詳細が表示されます</p><button onClick={()=>go('rsvp')} className="inline-flex items-center gap-1.5 px-5 py-2.5 text-white text-xs font-semibold shadow-md mx-auto active:scale-95" style={btnS}><I name="send" size={12}/> 参加表明する</button></div>}
+          <div className="bg-white p-6 shadow-sm border border-neutral-100 text-center flex flex-col justify-center" style={{borderRadius:T.cr}}><div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{backgroundColor:T.c+'08',color:T.c}}><I name="gift" size={22}/></div><h3 className="text-base font-semibold text-neutral-900 mb-1">ギフトリスト</h3><p className="text-xs text-neutral-500 mb-4">Amazon欲しいものリストより</p><a href={cfg.amazonUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-5 py-2.5 text-white text-xs font-semibold shadow-md mx-auto active:scale-95" style={btnS}><I name="external-link" size={12}/> リストを見る</a></div>
+        </div></section>
+      </div>}
+
+      {/* ═══ RSVP ═══ */}
+      {page==='rsvp'&&<div className="max-w-md mx-auto px-5 py-16 fin"><ST title="参加表明" sub="RSVP"/><div className="bg-white p-6 shadow-lg border border-neutral-100" style={{borderRadius:T.cr}}>{closed?<div className="text-center py-10"><I name="alert-circle" size={36} className="mx-auto text-neutral-300 mb-3"/><h3 className="text-lg font-semibold text-neutral-700">受付は終了しました</h3></div>:<div className="space-y-4">
+        <Fd label="お名前 *"><input className={iCls} placeholder="例: 山田太郎" value={rName} onChange={e=>setRName(e.target.value)}/></Fd>
+        <Fd label={<>メールアドレス {cfg.autoReplyEnabled&&<span className="text-rose-400 font-normal">（お礼メール送付先）</span>}</>}><input type="email" className={iCls} placeholder="example@mail.com" value={rEmail} onChange={e=>setREmail(e.target.value)}/>{cfg.autoReplyEnabled&&<p className="text-[10px] text-neutral-400 mt-1">✉️ AIが作成したお礼メールが届きます</p>}</Fd>
+        <Fd label="出欠"><div className="grid grid-cols-2 gap-2">{['yes','no'].map(v=><button key={v} onClick={()=>setRAtt(v)} className={`py-2.5 text-sm font-semibold border-2 rounded-lg transition-all ${rAtt===v?'text-white shadow-md':'bg-white text-neutral-400 border-neutral-100'}`} style={rAtt===v?{backgroundColor:T.c,borderColor:T.c}:{}}>{v==='yes'?'🎉 出席します':'😢 欠席します'}</button>)}</div></Fd>
+        <Fd label={<span className="flex items-center gap-2">メッセージ（任意）<Tip text="AIが文章を整えてくれます"/>{rMsg&&<button onClick={refineMsg} disabled={aiRefining} className="text-[10px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 text-purple-600 hover:bg-purple-100 disabled:opacity-40">{aiRefining?<I name="loader2" size={10} className="animate-spin"/>:<I name="wand2" size={10}/>} AI校正</button>}</span>}><textarea className={iCls+" h-24 resize-none"} placeholder="お祝いメッセージ..." value={rMsg} onChange={e=>setRMsg(e.target.value)}/></Fd>
+        <button onClick={doRsvp} disabled={!rName} className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98] transition-all" style={btnS}>回答を送信</button>
+      </div>}</div></div>}
+
+      {/* ═══ TELEGRAMS ═══ */}
+      {page==='telegram'&&<div className="max-w-3xl mx-auto px-5 py-16 fin"><ST title="皆様からのメッセージ" sub="Telegrams"/><div className="flex justify-center mb-8"><button onClick={()=>setShowMsg(true)} className="px-5 py-2.5 text-xs font-semibold flex items-center gap-1.5 shadow-md active:scale-95" style={btnS}><I name="plus" size={13}/> メッセージを送る</button></div>{msgs.length===0?<p className="text-center text-neutral-300 py-14 italic text-sm">メッセージを待っています...</p>:<div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">{[...msgs].sort((a,b)=>new Date(b.ts)-new Date(a.ts)).map(m=><div key={m.id} className="break-inside-avoid bg-white p-5 shadow-sm border border-neutral-100 relative group" style={{borderRadius:T.cr}}><I name="quote" className="absolute top-3 right-3 opacity-[.06]" size={28} style={{color:T.c}}/><p className="text-neutral-600 leading-relaxed mb-3 text-[13px] italic">"{m.text}"</p><div className="flex items-center justify-between border-t border-neutral-50 pt-2.5"><span className="text-xs font-semibold" style={{color:T.c}}>{m.name} 様</span>{isAdmin&&<button onClick={()=>deleteMessage(m.id)} className="text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><I name="trash2" size={12}/></button>}</div></div>)}</div>}</div>}
+
+      {/* ═══ GALLERY ═══ */}
+      {page==='gallery'&&<div className="max-w-4xl mx-auto px-5 py-16 fin"><ST title="思い出の写真館" sub="Gallery"/><div className="flex justify-center gap-3 mb-8"><button onClick={()=>slideItems.length>0&&setSlide(0)} className="px-5 py-2.5 bg-white border border-neutral-200 text-neutral-600 text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95" style={{borderRadius:T.r}}><I name="play" size={13}/> スライドショー</button><button onClick={()=>setShowUp(true)} className="px-5 py-2.5 text-xs font-semibold flex items-center gap-1.5 shadow-md active:scale-95" style={btnS}><I name="plus" size={13}/> 写真を投稿</button></div>{photos.length===0?<p className="text-center text-neutral-300 py-14 italic text-sm">まだ写真がありません</p>:<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">{[...photos].sort((a,b)=>new Date(b.ts)-new Date(a.ts)).map(p=><div key={p.id} className="aspect-square bg-white p-1 shadow-sm border border-neutral-100 overflow-hidden group relative" style={{borderRadius:T.cr}}><img src={p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" style={{borderRadius:`calc(${T.cr} - 4px)`}}/><div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3"><span className="text-white text-[10px] font-medium mb-1.5 truncate">by {p.uploader}</span><div className="flex justify-between items-center"><button onClick={()=>doLike(p.id)} className="text-rose-400 flex items-center gap-1 text-xs font-semibold"><I name="heart" size={12} fill={p.likes>0?'currentColor':'none'}/> {p.likes||0}</button>{isAdmin&&<button onClick={()=>deletePhoto(p.id)} className="text-white/50 hover:text-red-400"><I name="trash2" size={12}/></button>}</div></div></div>)}</div>}</div>}
+
+
+      {/* ═══ ADMIN ═══ */}
+      {page==='admin'&&<div className="max-w-3xl mx-auto px-5 py-10 fin">{!isAdmin?<div className="max-w-xs mx-auto pt-8"><ST title="管理画面" sub="CMS Login"/><div className="bg-white p-7 shadow-lg border border-neutral-100" style={{borderRadius:T.cr}}><div className="w-12 h-12 rounded-xl bg-neutral-50 flex items-center justify-center mx-auto mb-5"><I name="lock" size={20} className="text-neutral-400"/></div><div className="space-y-3"><input className={iCls} placeholder="Admin ID" value={loginId} onChange={e=>setLoginId(e.target.value)}/><input className={iCls} type="password" placeholder="Password" value={loginPw} onChange={e=>setLoginPw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&doLogin()}/><button onClick={doLogin} className="w-full py-3 text-sm font-semibold shadow-lg active:scale-[0.98]" style={btnS}>ログイン</button></div></div><button onClick={()=>go('home')} className="text-xs text-neutral-400 mt-4 mx-auto block hover:text-neutral-600">← トップへ戻る</button></div>
+      :<div className="space-y-5">
+        <div className="bg-white p-4 border border-neutral-100 shadow-sm flex flex-col gap-3" style={{borderRadius:T.cr}}><div className="flex justify-between items-center"><h2 className="text-base font-semibold text-neutral-900">管理パネル</h2><div className="flex items-center gap-2"><button onClick={()=>go('home')} className="text-xs text-neutral-400 hover:text-neutral-600">トップへ</button><button onClick={()=>{setIsAdmin(false);go('home');}} className="text-neutral-300 hover:text-neutral-500"><I name="unlock" size={16}/></button></div></div>
+        <div className="flex gap-1 overflow-x-auto pb-1 flex-wrap">{[{id:'settings',icon:'settings',l:'基本'},{id:'design',icon:'palette',l:'デザイン'},{id:'email',icon:'sparkles',l:'自動返信',badge:draftCt},{id:'schedule',icon:'list-todo',l:'スケジュール'},{id:'updates',icon:'newspaper',l:'お知らせ'},{id:'guests',icon:'users',l:'ゲスト'},{id:'aitools',icon:'wand2',l:'AI Tools'},{id:'data',icon:'database',l:'データ'}].map(t=><button key={t.id} onClick={()=>setATab(t.id)} className={`flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold whitespace-nowrap rounded-md transition-all ${aTab===t.id?'text-white shadow-md':'bg-neutral-50 text-neutral-400 hover:bg-neutral-100'}`} style={aTab===t.id?{backgroundColor:T.c}:{}}><I name={t.icon} size={12}/>{t.l}{t.badge>0&&<span className="ml-0.5 bg-amber-400 text-amber-900 text-[8px] font-bold px-1.5 py-0.5 rounded-full">{t.badge}</span>}</button>)}</div></div>
+
+        {/* Settings */}
+        {aTab==='settings'&&<div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{borderRadius:T.cr}}><h3 className="font-semibold text-neutral-900 mb-5 text-sm">基本設定</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-5"><div className="space-y-3"><Fd label="主役の名前"><input className={iCls} value={cfg.name} onChange={e=>sc({name:e.target.value})}/></Fd><Fd label="会場名"><input className={iCls} value={cfg.venue} onChange={e=>sc({venue:e.target.value})}/></Fd><Fd label="詳細住所"><input className={iCls} value={cfg.address} onChange={e=>sc({address:e.target.value})}/></Fd><Fd label="Amazon URL"><input className={iCls} value={cfg.amazonUrl} onChange={e=>sc({amazonUrl:e.target.value})}/></Fd></div><div className="space-y-3"><div className="grid grid-cols-2 gap-2"><Fd label="生年月日"><input type="date" className={iCls} value={cfg.birthDate} onChange={e=>sc({birthDate:e.target.value})}/></Fd><Fd label="イベント日"><input type="date" className={iCls} value={cfg.eventDate} onChange={e=>sc({eventDate:e.target.value})}/></Fd></div><Fd label="RSVP締切日"><input type="date" className={iCls} value={cfg.rsvpDeadline} onChange={e=>sc({rsvpDeadline:e.target.value})}/></Fd><Fd label="告知バナー"><input className="w-full px-3.5 py-2.5 bg-amber-50 border border-amber-200/60 text-sm rounded-lg focus:outline-none" placeholder="空欄で非表示" value={cfg.announcement} onChange={e=>sc({announcement:e.target.value})}/></Fd><Fd label="サブタイトル"><input className={iCls} value={cfg.heroSub} onChange={e=>sc({heroSub:e.target.value})}/></Fd></div></div></div>}
+
+        {/* Design */}
+        {aTab==='design'&&<div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{borderRadius:T.cr}}><h3 className="font-semibold text-neutral-900 mb-5 text-sm">デザイン</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="space-y-5"><Fd label="テーマカラー"><div className="flex items-center gap-3"><input type="color" className="w-10 h-10 cursor-pointer rounded-lg border-0" value={cfg.color} onChange={e=>sc({color:e.target.value})}/><span className="font-mono text-sm font-semibold" style={{color:T.c}}>{cfg.color}</span></div></Fd><Fd label="スタイル"><div className="grid grid-cols-3 gap-2">{[{id:'elegant',l:'エレガント',d:'明朝体'},{id:'modern',l:'モダン',d:'ゴシック'},{id:'playful',l:'ポップ',d:'丸文字'}].map(s=><button key={s.id} onClick={()=>sc({style:s.id})} className={`py-2.5 px-2 text-center border-2 rounded-lg transition-all ${cfg.style===s.id?'':'border-neutral-100 text-neutral-400'}`} style={cfg.style===s.id?{borderColor:T.c,backgroundColor:T.c+'08',color:T.c}:{}}><div className="text-[11px] font-bold">{s.l}</div><div className="text-[9px] opacity-60">{s.d}</div></button>)}</div></Fd></div><Fd label="トップ画像"><div onClick={()=>topRef.current?.click()} className="w-full aspect-video bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center cursor-pointer overflow-hidden rounded-lg">{cfg.topImg?<img src={cfg.topImg} className="w-full h-full object-cover" alt=""/>:<div className="text-neutral-300 flex flex-col items-center gap-1.5"><I name="camera" size={28}/><span className="text-[11px]">クリック</span></div>}<input ref={topRef} type="file" accept="image/*" onChange={doTopImg} className="hidden"/></div>{cfg.topImg&&<button onClick={()=>sc({topImg:''})} className="text-[11px] text-red-400 mt-1">削除</button>}</Fd></div></div>}
+
+        {/* Email */}
+        {aTab==='email'&&<div className="space-y-5"><div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{borderRadius:T.cr}}><div className="flex items-center gap-2 mb-4"><I name="sparkles" size={16} style={{color:T.c}}/><h3 className="font-semibold text-neutral-900 text-sm">AI自動返信メール</h3><Tip text="オープンハウス案内も自動で含まれます"/></div><div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg mb-4"><span className="text-sm font-semibold text-neutral-800">自動返信を有効にする</span><button onClick={()=>sc({autoReplyEnabled:!cfg.autoReplyEnabled})} className={`w-12 h-7 rounded-full transition-all relative ${cfg.autoReplyEnabled?'':'bg-neutral-200'}`} style={cfg.autoReplyEnabled?{backgroundColor:T.c}:{}}><div className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-1 transition-all ${cfg.autoReplyEnabled?'left-6':'left-1'}`}/></button></div><div className="flex gap-3 items-end"><div className="flex-1"><Fd label="差出人名"><input className={iCls} value={cfg.senderName} onChange={e=>sc({senderName:e.target.value})}/></Fd></div><button onClick={async()=>{setGenLoading('test');const body=await genEmail('テスト太郎','yes');setPreviewDraft({id:'test',name:'テスト太郎',email:'test@example.com',subject:'ご出席ありがとうございます🎉',body,att:'yes'});setGenLoading(null);}} disabled={!!genLoading} className="px-4 py-2.5 text-[11px] font-semibold shadow-md disabled:opacity-50 flex items-center gap-1 shrink-0" style={btnS}>{genLoading==='test'?<I name="loader2" size={13} className="animate-spin"/>:<I name="eye" size={13}/>} プレビュー</button></div></div>
+
+        <div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{borderRadius:T.cr}}><div className="flex items-center justify-between mb-4"><h3 className="font-semibold text-neutral-900 text-sm">返信メール一覧 <span className="text-xs font-normal">{draftCt>0&&<span className="text-amber-600">{draftCt}件未送信</span>}{sentCt>0&&<span className="text-emerald-600 ml-1">{sentCt}件済</span>}</span></h3>{draftCt>0&&<button onClick={()=>emailDrafts.filter(d=>d.status==='draft').forEach((d,i)=>setTimeout(()=>openGmail(d),i*800))} className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold shadow-md" style={btnS}><I name="mail" size={12}/> 一括送信</button>}</div>{emailDrafts.length===0?<div className="text-center py-8"><I name="mail-open" size={32} className="mx-auto text-neutral-200 mb-2"/><p className="text-sm text-neutral-400">RSVPが届くとAIがメールを作成</p></div>:<div className="space-y-3">{[...emailDrafts].sort((a,b)=>new Date(b.ts)-new Date(a.ts)).map(d=><div key={d.id} className={`p-4 rounded-lg border ${d.status==='sent'?'bg-emerald-50/50 border-emerald-100':'bg-white border-neutral-100 shadow-sm'}`}><div className="flex items-center justify-between mb-2 flex-wrap gap-1"><div className="flex items-center gap-2 flex-wrap">{d.status==='sent'?<I name="check-circle-2" size={15} className="text-emerald-500"/>:<I name="mail" size={15} style={{color:T.c}}/>}<span className="text-sm font-semibold">{d.name}</span><span className="text-[10px] text-neutral-400">{d.email}</span><span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${d.att==='yes'?'bg-emerald-50 text-emerald-700':'bg-red-50 text-red-600'}`}>{d.att==='yes'?'出席':'欠席'}</span></div><span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${d.status==='sent'?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}`}>{d.status==='sent'?'送信済':'未送信'}</span></div><p className="text-[12px] text-neutral-500 leading-relaxed mb-3 overflow-hidden" style={{display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{d.body}</p><div className="flex items-center gap-1.5 flex-wrap">{d.status==='draft'&&<button onClick={()=>openGmail(d)} className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold text-white rounded-md bg-blue-600 shadow-md"><I name="mail" size={11}/> Gmail</button>}<button onClick={()=>setPreviewDraft(d)} className="px-2.5 py-1.5 text-[11px] font-semibold bg-neutral-100 text-neutral-600 rounded-md"><I name="eye" size={11}/></button><button onClick={()=>regenDraft(d.id)} disabled={!!genLoading} className="px-2.5 py-1.5 text-[11px] font-semibold bg-neutral-100 text-neutral-600 rounded-md disabled:opacity-30">{genLoading===d.rsvpId?<I name="loader2" size={11} className="animate-spin"/>:<I name="refresh-cw" size={11}/>}</button><button onClick={()=>copyTxt(d.body)} className="px-2.5 py-1.5 text-[11px] font-semibold bg-neutral-100 text-neutral-600 rounded-md"><I name="copy" size={11}/></button><button onClick={()=>deleteEmailDraft(d.id)} className="text-neutral-300 hover:text-red-500 ml-auto"><I name="trash2" size={12}/></button></div></div>)}</div>}</div></div>}
+
+        {/* Schedule */}
+        {aTab==='schedule'&&<div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{borderRadius:T.cr}}><div className="flex justify-between items-center mb-5"><h3 className="font-semibold text-neutral-900 text-sm">スケジュール</h3><button onClick={()=>setShowSchedForm(!showSchedForm)} className="px-3 py-1.5 text-[11px] font-semibold shadow-md active:scale-95" style={btnS}>{showSchedForm?'× 閉じる':'+ 追加'}</button></div>{showSchedForm&&<div className="p-4 bg-neutral-50 border border-neutral-100 rounded-lg mb-4 space-y-3"><div className="grid grid-cols-3 gap-2"><Fd label="時間"><input className={iCls} placeholder="14:00" value={newSchedTime} onChange={e=>setNewSchedTime(e.target.value)}/></Fd><div className="col-span-2"><Fd label="内容"><input className={iCls} placeholder="イベント名" value={newSchedTitle} onChange={e=>setNewSchedTitle(e.target.value)} onKeyDown={e=>e.key==='Enter'&&doAddSched()}/></Fd></div></div><button onClick={doAddSched} disabled={!newSchedTime||!newSchedTitle} className="px-4 py-2 text-[11px] font-semibold shadow-md disabled:opacity-40 active:scale-95" style={btnS}>追加する</button></div>}<div className="space-y-2">{[...sched].sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(s=><div key={s.id} className="p-3 bg-neutral-50 border border-neutral-100 rounded-lg">{editSchedId===s.id?<div className="space-y-2"><div className="grid grid-cols-3 gap-2"><input className={iCls} value={editSchedTime} onChange={e=>setEditSchedTime(e.target.value)}/><input className={iCls+" col-span-2"} value={editSchedTitle} onChange={e=>setEditSchedTitle(e.target.value)} onKeyDown={e=>e.key==='Enter'&&saveEditSched()}/></div><div className="flex gap-2"><button onClick={saveEditSched} disabled={!editSchedTime||!editSchedTitle} className="px-3 py-1.5 text-[11px] font-semibold text-white rounded-md shadow-sm disabled:opacity-40" style={{backgroundColor:T.c}}>保存</button><button onClick={cancelEditSched} className="px-3 py-1.5 text-[11px] font-semibold bg-neutral-200 text-neutral-600 rounded-md">キャンセル</button></div></div>:<div className="flex items-center justify-between"><div className="flex items-center gap-4"><span className="font-semibold tabular-nums" style={{color:T.c}}>{s.time}</span><span className="text-sm text-neutral-700">{s.title}</span></div><div className="flex items-center gap-1.5"><button onClick={()=>startEditSched(s)} className="text-neutral-300 hover:text-blue-500"><I name="pencil" size={13}/></button><button onClick={()=>deleteSchedule(s.id)} className="text-neutral-300 hover:text-red-500"><I name="trash2" size={13}/></button></div></div>}</div>)}{!sched.length&&<p className="text-center text-neutral-300 py-6 text-sm">未設定</p>}</div></div>}
+
+        {/* Updates */}
+        {aTab==='updates'&&<div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{borderRadius:T.cr}}><div className="flex justify-between items-center mb-5"><h3 className="font-semibold text-neutral-900 text-sm">お知らせ</h3><button onClick={()=>setShowNewsForm(!showNewsForm)} className="px-3 py-1.5 text-[11px] font-semibold shadow-md active:scale-95" style={btnS}>{showNewsForm?'× 閉じる':'+ 投稿'}</button></div>{showNewsForm&&<div className="p-4 bg-neutral-50 border border-neutral-100 rounded-lg mb-4 space-y-3"><Fd label="タイトル *"><input className={iCls} placeholder="タイトル" value={newNewsTitle} onChange={e=>setNewNewsTitle(e.target.value)}/></Fd><Fd label="内容"><textarea className={iCls+" h-20 resize-none"} placeholder="詳細" value={newNewsContent} onChange={e=>setNewNewsContent(e.target.value)}/></Fd><button onClick={doAddNews} disabled={!newNewsTitle} className="px-4 py-2 text-[11px] font-semibold shadow-md disabled:opacity-40 active:scale-95" style={btnS}>投稿する</button></div>}<div className="space-y-2">{[...news].sort((a,b)=>new Date(b.ts)-new Date(a.ts)).map(u=><div key={u.id} className="p-4 bg-neutral-50 border border-neutral-100 rounded-lg flex justify-between items-start"><div><h4 className="font-semibold text-neutral-900 text-sm mb-0.5">{u.title}</h4><p className="text-[13px] text-neutral-500">{u.content}</p></div><button onClick={()=>deleteNews(u.id)} className="text-neutral-300 hover:text-red-500 shrink-0"><I name="trash2" size={14}/></button></div>)}{!news.length&&<p className="text-center text-neutral-300 py-6 text-sm">未設定</p>}</div></div>}
+
+        {/* Guests */}
+        {aTab==='guests'&&<div className="bg-white border border-neutral-100 shadow-sm overflow-hidden" style={{borderRadius:T.cr}}><div className="p-5 border-b border-neutral-100 flex justify-between items-center"><h3 className="font-semibold text-neutral-900 text-sm">ゲスト ({rsvps.length})</h3><button onClick={doBulkMail} disabled={!selGuests.length} className="px-3 py-1.5 bg-blue-600 text-white text-[11px] font-semibold rounded-md disabled:opacity-20 shadow-md flex items-center gap-1"><I name="mail" size={12}/> 一括メール</button></div>{!rsvps.length?<p className="text-center text-neutral-300 py-10 text-sm">まだ登録なし</p>:<div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-neutral-50 text-[10px] text-neutral-400 font-semibold uppercase"><tr><th className="px-3 py-2 text-center w-8"><input type="checkbox" checked={selGuests.length===rsvps.length} onChange={()=>setSelGuests(selGuests.length===rsvps.length?[]:rsvps.map(g=>g.id))}/></th><th className="px-3 py-2">名前</th><th className="px-3 py-2">メール</th><th className="px-3 py-2 text-center">出欠</th><th className="px-3 py-2 text-center">返信</th><th className="px-3 py-2 w-8"></th></tr></thead><tbody className="divide-y divide-neutral-50">{rsvps.map(g=>{const dr=emailDrafts.find(d=>d.rsvpId===g.id);return <tr key={g.id} className="hover:bg-neutral-50/50"><td className="px-3 py-2 text-center"><input type="checkbox" checked={selGuests.includes(g.id)} onChange={()=>setSelGuests(p=>p.includes(g.id)?p.filter(i=>i!==g.id):[...p,g.id])}/></td><td className="px-3 py-2 font-medium">{g.name}</td><td className="px-3 py-2 text-neutral-400 text-xs">{g.email||'—'}</td><td className="px-3 py-2 text-center"><span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${g.att==='yes'?'bg-emerald-50 text-emerald-700':'bg-red-50 text-red-600'}`}>{g.att==='yes'?'出席':'欠席'}</span></td><td className="px-3 py-2 text-center">{dr?.status==='sent'?<I name="check-circle-2" size={13} className="text-emerald-500 mx-auto"/>:dr?.status==='draft'?<button onClick={()=>setATab('email')} className="text-amber-500 text-[10px] font-semibold">未送信</button>:<span className="text-neutral-200">—</span>}</td><td className="px-3 py-2 text-center"><button onClick={()=>deleteRsvp(g.id)} className="text-neutral-300 hover:text-red-500"><I name="trash2" size={12}/></button></td></tr>;})}</tbody></table></div>}</div>}
+
+        {/* AI Tools */}
+        {aTab==='aitools'&&<div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{borderRadius:T.cr}}><div className="flex items-center gap-2 mb-5"><I name="wand2" size={16} style={{color:T.c}}/><h3 className="font-semibold text-neutral-900 text-sm">AI Tools</h3></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5"><button onClick={()=>aiTool('future')} disabled={aiLoading} className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 rounded-lg text-left hover:shadow-md disabled:opacity-50"><div className="text-2xl mb-2">🔮</div><h4 className="text-sm font-semibold text-purple-900 mb-1">10年後の未来予想</h4><p className="text-[11px] text-purple-600/70">{cfg.name}ちゃんのハッピーな未来</p></button><button onClick={()=>aiTool('speech')} disabled={aiLoading} className="p-5 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 rounded-lg text-left hover:shadow-md disabled:opacity-50"><div className="text-2xl mb-2">🎤</div><h4 className="text-sm font-semibold text-amber-900 mb-1">スピーチ原稿作成</h4><p className="text-[11px] text-amber-600/70">感動的な挨拶案</p></button></div>{aiLoading&&<div className="flex items-center justify-center gap-2 py-8"><I name="loader2" size={20} className="animate-spin" style={{color:T.c}}/><span className="text-sm text-neutral-500">AIが考え中...</span></div>}{aiResult&&!aiLoading&&<div className="p-5 bg-neutral-50 border border-neutral-100 rounded-lg"><div className="flex items-center justify-between mb-3"><h4 className="text-sm font-semibold">{aiResult.type==='future'?'🔮 未来予想':'🎤 スピーチ原稿'}</h4><button onClick={()=>copyTxt(aiResult.text)} className="flex items-center gap-1 px-3 py-1 text-[10px] font-semibold bg-white rounded-md border text-neutral-500"><I name="copy" size={11}/> コピー</button></div><pre className="text-sm text-neutral-700 whitespace-pre-wrap leading-relaxed" style={{fontFamily:'inherit'}}>{aiResult.text}</pre></div>}</div>}
+
+        {/* Data */}
+        {aTab==='data'&&<div className="bg-white p-6 border border-neutral-100 shadow-sm text-center" style={{borderRadius:T.cr}}><h3 className="font-semibold text-neutral-900 mb-6 text-sm">データ管理</h3><div className="grid grid-cols-2 gap-3 max-w-sm mx-auto"><button onClick={doExport} className="flex flex-col items-center gap-2 p-6 bg-neutral-50 border border-neutral-100 rounded-lg hover:bg-emerald-50 hover:border-emerald-100 transition-all group"><I name="download" size={28} className="text-neutral-300 group-hover:text-emerald-600"/><span className="text-[11px] font-semibold">エクスポート</span></button><button onClick={()=>impRef.current?.click()} className="flex flex-col items-center gap-2 p-6 bg-neutral-50 border border-neutral-100 rounded-lg hover:bg-blue-50 hover:border-blue-100 transition-all group"><I name="file-up" size={28} className="text-neutral-300 group-hover:text-blue-600"/><span className="text-[11px] font-semibold">インポート</span><input ref={impRef} type="file" accept=".json" onChange={doImport} className="hidden"/></button></div></div>}
+      </div>}</div>}
+
+      </div>{/* end main content */}
+
+      {/* Footer */}
+      {isGuestPage&&<footer className="bg-white border-t border-neutral-100 py-8 px-6 text-center"><p className="text-xs text-neutral-300 mb-3">{cfg.name}の{age}歳 生誕祭 🎂</p><button onClick={()=>go('admin')} className="text-[10px] text-neutral-300 hover:text-neutral-500 flex items-center gap-1 mx-auto"><I name="lock" size={10}/> 管理者ログイン</button></footer>}
+
+      {/* Modals */}
+      {showUp&&<Modal onClose={()=>{setShowUp(false);setUImgs([]);setUName('');}}><h3 className="text-lg font-semibold text-neutral-900 mb-4">写真を投稿</h3><div className="space-y-4"><div onClick={()=>fileRef.current?.click()} className="w-full aspect-[16/10] bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center cursor-pointer overflow-hidden rounded-lg">{uImgs.length?<div className="grid grid-cols-3 gap-1 p-2 w-full h-full overflow-y-auto">{uImgs.map((p,i)=><img key={i} src={p} className="w-full h-16 object-cover rounded" alt=""/>)}</div>:<div className="text-neutral-300 flex flex-col items-center gap-1.5"><I name="upload" size={28}/><span className="text-[11px]">最大10枚</span></div>}<input ref={fileRef} type="file" accept="image/*" multiple onChange={doFiles} className="hidden"/></div><input className={iCls+" text-center font-medium"} placeholder="投稿者のお名前" value={uName} onChange={e=>setUName(e.target.value)}/><button onClick={doUpload} disabled={!uImgs.length||!uName} className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98]" style={btnS}>アップロード</button></div></Modal>}
+
+      {showMsg&&<Modal onClose={()=>setShowMsg(false)}><h3 className="text-lg font-semibold text-neutral-900 mb-0.5">お祝いメッセージ</h3><p className="text-[11px] text-neutral-400 mb-5">{cfg.name}ちゃんへ心を込めて</p><div className="space-y-4"><input className={iCls+" font-medium"} placeholder="お名前" value={mName} onChange={e=>setMName(e.target.value)}/><textarea className={iCls+" h-28 resize-none"} placeholder="メッセージ..." value={mText} onChange={e=>setMText(e.target.value)}/><button onClick={doMsg} disabled={!mName||!mText} className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98]" style={btnS}>送信</button></div></Modal>}
+
+      {previewDraft&&<Modal onClose={()=>setPreviewDraft(null)} wide><div className="flex items-center gap-2 mb-4"><I name="sparkles" size={16} style={{color:T.c}}/><h3 className="text-lg font-semibold">AIメール プレビュー</h3></div><div className="space-y-1.5 mb-4 text-xs"><div className="flex gap-2"><span className="font-semibold text-neutral-500 w-10">To:</span><span>{previewDraft.name} &lt;{previewDraft.email}&gt;</span></div><div className="flex gap-2"><span className="font-semibold text-neutral-500 w-10">件名:</span><span>{previewDraft.subject}</span></div><div className="flex gap-2"><span className="font-semibold text-neutral-500 w-10">From:</span><span>{cfg.senderName}</span></div></div><div className="bg-neutral-50 border border-neutral-100 rounded-lg p-4 mb-4"><pre className="text-sm text-neutral-700 whitespace-pre-wrap leading-relaxed" style={{fontFamily:'inherit'}}>{previewDraft.body}</pre></div><div className="flex gap-2 justify-end"><button onClick={()=>copyTxt(previewDraft.body)} className="flex items-center gap-1 px-3 py-2 text-[11px] font-semibold bg-neutral-100 text-neutral-600 rounded-md"><I name="copy" size={12}/> コピー</button>{previewDraft.id!=='test'&&previewDraft.status!=='sent'&&<button onClick={()=>{openGmail(previewDraft);setPreviewDraft(null);}} className="flex items-center gap-1 px-3 py-2 text-[11px] font-semibold text-white rounded-md bg-blue-600 shadow-md"><I name="mail" size={12}/> Gmail送信</button>}</div></Modal>}
+
+      {/* Slideshow */}
+      {slide>=0&&slideItems.length>0&&<div className="fixed inset-0 bg-black z-[250] flex items-center justify-center"><button onClick={()=>setSlide(-1)} className="absolute top-5 right-5 text-white/30 hover:text-white z-10"><I name="x" size={32}/></button>{slideItems.map((item,i)=><div key={item.id||i} className={`absolute inset-0 flex items-center justify-center px-6 transition-all duration-[1500ms] ${i===slide?'opacity-100 scale-100':'opacity-0 scale-105 pointer-events-none'}`}>{item._t==='img'?<div className="text-center"><img src={item.url} alt="" className="max-w-[88vw] max-h-[72vh] object-contain rounded-xl shadow-2xl"/><p className="mt-4 text-white/40 text-sm italic">by {item.uploader}</p></div>:<div className="max-w-2xl w-full text-center px-6"><I name="quote" size={48} className="mx-auto mb-5 text-white/10"/><p className="text-2xl md:text-4xl font-light text-white leading-relaxed mb-6 italic">"{item.text}"</p><div className="w-12 h-px mx-auto mb-3" style={{backgroundColor:T.c}}/><p className="text-white/40">{item.name} 様</p></div>}</div>)}<div className="absolute bottom-6 left-0 right-0 flex justify-center gap-1.5">{slideItems.slice(0,20).map((_,i)=><button key={i} onClick={()=>setSlide(i)} className={`h-1.5 rounded-full transition-all duration-500 ${i===slide%20?'w-7':'w-1.5 bg-white/15'}`} style={i===slide%20?{backgroundColor:T.c}:{}}/>)}</div></div>}
+
+      {toast&&<Toast msg={toast} onClose={()=>setToast(null)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
