@@ -177,6 +177,10 @@ export default function App() {
     const schedT = [...sched].sort((a, b) => (a.time || '').localeCompare(b.time || '')).map(s => `  ${s.time} - ${s.title}`).join('\n');
     const p = att === 'yes'
       ? `あなたは「${cfg.senderName}」です。${name}さんが${cfg.name}の${age}歳誕生日会に出席表明。感謝メールを日本語で。
+冒頭に必ず記載:
+- 日付: 2026年2月11日（祝日）11時〜
+- 公式サイト: https://ryou-on.github.io/tomoe1stbd/
+
 含める:
 - ${name}さんへの温かい感謝
 - 会場: ${cfg.venue}（${cfg.address}）
@@ -186,7 +190,7 @@ ${schedT}
 - 【重要】当日はオープンハウス形式です。いつ来ていつ退出しても構いません。ご都合の良い時間帯にお越しください。
 - 【注意】本人の体調や機嫌によりスケジュールが前後したり、予告なく中止になる場合があります。ご了承ください。
 - プレゼント: Amazon欲しいものリスト → ${cfg.amazonUrl}
-ルール: 300文字程度、温かい文体、本文のみ、「${cfg.senderName}より」で締める`
+ルール: 350文字程度、温かい文体、本文のみ、「${cfg.senderName}より」で締める`
       : `あなたは「${cfg.senderName}」です。${name}さんが${cfg.name}の誕生日会に欠席返信。気遣いのある返信100文字程度。本文のみ。「${cfg.senderName}より」で締める。`;
     try { return await callAI(p); }
     catch { return att === 'yes' ? `${name}さん、ご出席ありがとうございます！\n\n📍${cfg.venue}（${cfg.address}）\n🗺️${mapUrl}\n\n当日はオープンハウス形式です。いつ来ていつ退出しても構いません。\n※本人の体調や機嫌によりスケジュールが変更になる場合がございます。\n\n🎁${cfg.amazonUrl}\n\n${cfg.senderName}より` : `${name}さん、お返事ありがとうございます。\n\n${cfg.senderName}より`; }
@@ -381,7 +385,7 @@ ${schedT}
                 <p className="text-sm md:text-base text-neutral-500 mb-10 tracking-wide">{new Date(cfg.eventDate).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button onClick={() => go('rsvp')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>参加を表明する</button>
-                  <button onClick={() => go('media')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>メディア</button>
+                  {cfg.showMediaPage && <button onClick={() => go('media')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>メディア</button>}
                   <button onClick={() => setShowMsg(true)} className="px-7 py-3.5 text-sm font-semibold bg-white border border-neutral-200 shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style={{ borderRadius: T.r, color: T.c }}><MessageSquare size={15} /> お祝いメッセージを送る</button>
                 </div>
               </div>
