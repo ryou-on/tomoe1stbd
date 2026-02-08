@@ -385,7 +385,7 @@ ${schedT}
                 <p className="text-sm md:text-base text-neutral-500 mb-10 tracking-wide">{new Date(cfg.eventDate).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button onClick={() => go('rsvp')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>参加を表明する</button>
-                  {cfg.showMediaPage && <button onClick={() => go('media')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>メディア</button>}
+
                   <button onClick={() => setShowMsg(true)} className="px-7 py-3.5 text-sm font-semibold bg-white border border-neutral-200 shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style={{ borderRadius: T.r, color: T.c }}><MessageSquare size={15} /> お祝いメッセージを送る</button>
                 </div>
               </div>
