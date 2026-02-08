@@ -376,7 +376,8 @@ ${schedT}
               <div className="relative z-10 max-w-xl px-6 text-center">
                 <p className="tracking-[.5em] text-[11px] uppercase mb-5 font-medium" style={{ color: T.c + 'aa' }}>{cfg.heroSub}</p>
                 <h1 className="text-5xl md:text-8xl font-light text-neutral-900 mb-3 tracking-tight leading-none">{cfg.name}</h1>
-                <p className="text-2xl md:text-4xl font-light mb-10 tracking-tight" style={{ color: T.c }}>{age}歳 おめでとう</p>
+                <p className="text-2xl md:text-4xl font-light mb-3 tracking-tight" style={{ color: T.c }}>{age}歳 おめでとう</p>
+                <p className="text-sm md:text-base text-neutral-500 mb-10 tracking-wide">{new Date(cfg.eventDate).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button onClick={() => go('rsvp')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>参加を表明する</button>
                   <button onClick={() => setShowMsg(true)} className="px-7 py-3.5 text-sm font-semibold bg-white border border-neutral-200 shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style={{ borderRadius: T.r, color: T.c }}><MessageSquare size={15} /> お祝いメッセージを送る</button>
