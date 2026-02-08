@@ -151,7 +151,7 @@ export default function App() {
   });
 
   const btnS = { backgroundColor: T.c, borderRadius: T.r, color: '#fff' };
-  const iCls = "w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200/60 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-200";
+  const iCls = "w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200/60 text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-200 appearance-none";
 
   /* ─── Claude API ─── */
   const CLAUDE_KEY = import.meta.env.VITE_CLAUDE_API_KEY;
