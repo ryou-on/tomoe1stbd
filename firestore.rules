@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // アプリ設定 — 誰でも読み取り可、書き込みは認証済みユーザーのみ
+    match /app/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // RSVP — 誰でも作成可、読み取り・削除は認証済みのみ
+    match /rsvps/{docId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+
+    // メッセージ — 誰でも作成・読み取り可、削除は認証済み
+    match /messages/{docId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+
+    // 写真 — 誰でも作成・読み取り可、更新（いいね）も可
+    match /photos/{docId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if request.auth != null;
+    }
+
+    // スケジュール — 誰でも読み取り可、書き込みは認証済み
+    match /schedule/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ニュース — 誰でも読み取り可、書き込みは認証済み
+    match /news/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // メール下書き — 認証済みのみ
+    match /emailDrafts/{docId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
