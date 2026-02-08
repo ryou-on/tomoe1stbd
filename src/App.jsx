@@ -57,6 +57,7 @@ export default function App() {
 
   // ── ローカル UI ステート ──
   const [page, setPage]       = useState('home');
+  const [selectedMedia, setSelectedMedia] = useState(null);
   const [toast, setToast]     = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [aTab, setATab]       = useState('settings');
@@ -380,6 +381,7 @@ ${schedT}
                 <p className="text-sm md:text-base text-neutral-500 mb-10 tracking-wide">{new Date(cfg.eventDate).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button onClick={() => go('rsvp')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>参加を表明する</button>
+                  <button onClick={() => go('media')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>メディア</button>
                   <button onClick={() => setShowMsg(true)} className="px-7 py-3.5 text-sm font-semibold bg-white border border-neutral-200 shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style={{ borderRadius: T.r, color: T.c }}><MessageSquare size={15} /> お祝いメッセージを送る</button>
                 </div>
               </div>
@@ -413,7 +415,105 @@ ${schedT}
         {page === 'gallery' && (<div className="max-w-4xl mx-auto px-5 py-16 fin"><ST title="思い出の写真館" sub="Gallery" /><div className="flex justify-center gap-3 mb-8"><button onClick={() => slideItems.length > 0 && setSlide(0)} className="px-5 py-2.5 bg-white border border-neutral-200 text-neutral-600 text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95" style={{ borderRadius: T.r }}><Play size={13} /> スライドショー</button><button onClick={() => setShowUp(true)} className="px-5 py-2.5 text-xs font-semibold flex items-center gap-1.5 shadow-md active:scale-95" style={btnS}><Plus size={13} /> 写真を投稿</button></div>{photos.length === 0 ? <p className="text-center text-neutral-300 py-14 italic text-sm">まだ写真がありません</p> : (<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">{[...photos].sort((a, b) => new Date(b.ts) - new Date(a.ts)).map(p => (<div key={p.id} className="aspect-square bg-white p-1 shadow-sm border border-neutral-100 overflow-hidden group relative" style={{ borderRadius: T.cr }}><img src={p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" style={{ borderRadius: `calc(${T.cr} - 4px)` }} /><div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3"><span className="text-white text-[10px] font-medium mb-1.5 truncate">by {p.uploader}</span><div className="flex justify-between items-center"><button onClick={() => doLike(p.id)} className="text-rose-400 flex items-center gap-1 text-xs font-semibold"><Heart size={12} fill={p.likes > 0 ? 'currentColor' : 'none'} /> {p.likes || 0}</button>{isAdmin && <button onClick={() => deletePhoto(p.id)} className="text-white/50 hover:text-red-400"><Trash2 size={12} /></button>}</div></div></div>))}</div>)}</div>)}
 
         {/* ═══ ADMIN ═══ */}
-        {page === 'admin' && (<div className="max-w-3xl mx-auto px-5 py-10 fin">{!isAdmin ? (<div className="max-w-xs mx-auto pt-8"><ST title="管理画面" sub="CMS Login" /><div className="bg-white p-7 shadow-lg border border-neutral-100" style={{ borderRadius: T.cr }}><div className="w-12 h-12 rounded-xl bg-neutral-50 flex items-center justify-center mx-auto mb-5"><Lock size={20} className="text-neutral-400" /></div><div className="space-y-3"><input className={iCls} placeholder="Admin ID" value={loginId} onChange={e => setLoginId(e.target.value)} /><input className={iCls} type="password" placeholder="Password" value={loginPw} onChange={e => setLoginPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && doLogin()} /><button onClick={doLogin} className="w-full py-3 text-sm font-semibold shadow-lg active:scale-[0.98]" style={btnS}>ログイン</button></div></div><button onClick={() => go('home')} className="text-xs text-neutral-400 mt-4 mx-auto block hover:text-neutral-600">← トップへ戻る</button></div>) : (<div className="space-y-5">
+        {page === 'media' && (
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-amber-50 to-pink-50 py-16 px-5">
+      <div className="max-w-5xl mx-auto">
+        {/* ヘッダー */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-4" style={{ color: cfg.themeColor || '#e11d48' }}>
+            メディア
+          </h1>
+          <p className="text-sm text-neutral-500">Tomoeちゃんの思い出と楽曲</p>
+        </div>
+
+        {/* 楽曲セクション */}
+        {cfg.media?.songs && cfg.media.songs.length > 0 && (
+          <div className="mb-16">
+            <h2 className="text-2xl font-light mb-6 text-neutral-800">楽曲</h2>
+            <div className="grid gap-6 md:grid-cols-2">
+              {cfg.media.songs.map((song, i) => (
+                <div key={i} className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-lg font-medium mb-4 text-neutral-800">{song.title}</h3>
+                  {song.type === 'suno' && (
+                    <iframe
+                      src={song.url.replace('/song/', '/embed/')}
+                      className="w-full h-48 rounded-lg"
+                      frameBorder="0"
+                      allow="autoplay; clipboard-write; encrypted-media"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 楽譜セクション */}
+        {cfg.media?.scores && cfg.media.scores.length > 0 && (
+          <div className="mb-16">
+            <h2 className="text-2xl font-light mb-6 text-neutral-800">楽譜</h2>
+            <div className="grid gap-6">
+              {cfg.media.scores.map((score, i) => (
+                <div key={i} className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-lg font-medium mb-4 text-neutral-800">{score.title}</h3>
+                  <iframe
+                    src={score.url}
+                    className="w-full h-[600px] rounded-lg"
+                    frameBorder="0"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* タイムラインセクション */}
+        {cfg.media?.timeline && cfg.media.timeline.length > 0 && (
+          <div className="mb-16">
+            <h2 className="text-2xl font-light mb-6 text-neutral-800">成長の記録</h2>
+            <div className="space-y-8">
+              {[...cfg.media.timeline].sort((a, b) => new Date(b.date) - new Date(a.date)).map((event, i) => (
+                <div key={i} className="flex gap-6">
+                  <div className="flex-shrink-0 w-24 text-right">
+                    <div className="text-sm font-medium text-neutral-600">
+                      {new Date(event.date).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 pt-1">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cfg.themeColor || '#e11d48' }} />
+                  </div>
+                  <div className="flex-1 pb-8 border-b border-neutral-100">
+                    {event.imageUrl && (
+                      <img
+                        src={event.imageUrl}
+                        alt={event.title}
+                        className="w-full max-w-md h-48 object-cover rounded-lg mb-4 shadow-md"
+                      />
+                    )}
+                    <h3 className="text-lg font-medium mb-2 text-neutral-800">{event.title}</h3>
+                    <p className="text-sm text-neutral-600">{event.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 戻るボタン */}
+        <div className="text-center mt-12">
+          <button
+            onClick={() => go('home')}
+            className="px-6 py-3 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all rounded-full"
+            style={{ backgroundColor: cfg.themeColor || '#e11d48', color: 'white' }}
+          >
+            ← トップへ戻る
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+
+    {page === 'admin' && (<div className="max-w-3xl mx-auto px-5 py-10 fin">{!isAdmin ? (<div className="max-w-xs mx-auto pt-8"><ST title="管理画面" sub="CMS Login" /><div className="bg-white p-7 shadow-lg border border-neutral-100" style={{ borderRadius: T.cr }}><div className="w-12 h-12 rounded-xl bg-neutral-50 flex items-center justify-center mx-auto mb-5"><Lock size={20} className="text-neutral-400" /></div><div className="space-y-3"><input className={iCls} placeholder="Admin ID" value={loginId} onChange={e => setLoginId(e.target.value)} /><input className={iCls} type="password" placeholder="Password" value={loginPw} onChange={e => setLoginPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && doLogin()} /><button onClick={doLogin} className="w-full py-3 text-sm font-semibold shadow-lg active:scale-[0.98]" style={btnS}>ログイン</button></div></div><button onClick={() => go('home')} className="text-xs text-neutral-400 mt-4 mx-auto block hover:text-neutral-600">← トップへ戻る</button></div>) : (<div className="space-y-5">
           <div className="bg-white p-4 border border-neutral-100 shadow-sm flex flex-col gap-3" style={{ borderRadius: T.cr }}><div className="flex justify-between items-center"><h2 className="text-base font-semibold text-neutral-900">管理パネル</h2><div className="flex items-center gap-2"><button onClick={() => go('home')} className="text-xs text-neutral-400 hover:text-neutral-600">トップへ</button><button onClick={() => { setIsAdmin(false); go('home'); }} className="text-neutral-300 hover:text-neutral-500"><Unlock size={16} /></button></div></div><div className="flex gap-1 overflow-x-auto pb-1 flex-wrap">{[{ id: 'settings', icon: Settings, l: '基本' },{ id: 'design', icon: Palette, l: 'デザイン' },{ id: 'email', icon: Sparkles, l: '自動返信', badge: draftCt },{ id: 'schedule', icon: ListTodo, l: 'スケジュール' },{ id: 'updates', icon: Newspaper, l: 'お知らせ' },{ id: 'guests', icon: Users, l: 'ゲスト' },{ id: 'aitools', icon: Wand2, l: 'AI Tools' },{ id: 'data', icon: Database, l: 'データ' }].map(t => (<button key={t.id} onClick={() => setATab(t.id)} className={`flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold whitespace-nowrap rounded-md transition-all ${aTab === t.id ? 'text-white shadow-md' : 'bg-neutral-50 text-neutral-400 hover:bg-neutral-100'}`} style={aTab === t.id ? { backgroundColor: T.c } : {}}><t.icon size={12} />{t.l}{t.badge > 0 && <span className="ml-0.5 bg-amber-400 text-amber-900 text-[8px] font-bold px-1.5 py-0.5 rounded-full">{t.badge}</span>}</button>))}</div></div>
 
           {/* Admin tabs content — 同じ構造、操作は hook 経由 */}
