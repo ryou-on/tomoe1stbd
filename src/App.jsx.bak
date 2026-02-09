@@ -65,7 +65,6 @@ export default function App() {
   const [loginPw, setLoginPw] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [hasRsvped, setHasRsvped] = useState(false);
-  const [isComposing, setIsComposing] = useState(false);
 
   const [genLoading, setGenLoading] = useState(null);
   const [previewDraft, setPreviewDraft] = useState(null);
@@ -242,7 +241,7 @@ ${schedT}
   };
 
   const doRsvp = async () => {
-    if (!rName || closed || isComposing) return;
+    if (!rName || closed) return;
     const { id: rid, name: n, email: e, att: a } = await submitRsvp({ name: rName, email: rEmail, att: rAtt, msg: rMsg });
     setRName(''); setREmail(''); setRAtt('yes'); setRMsg('');
     setHasRsvped(true);
@@ -252,14 +251,14 @@ ${schedT}
   };
 
   const doMsg = async () => {
-    if (!mName || !mText || isComposing) return;
+    if (!mName || !mText) return;
     await submitMessage({ name: mName, text: mText });
     setMName(''); setMText(''); setShowMsg(false); go('telegram'); notify('メッセージを送信しました');
   };
 
   const doFiles = async e => { const f = Array.from(e.target.files).slice(0, 10); if (!f.length) return; setUImgs(await Promise.all(f.map(x => compress(x)))); };
   const doUpload = async () => {
-    if (!uImgs.length || !uName || isComposing) return;
+    if (!uImgs.length || !uName) return;
     await submitPhotos(uName, uImgs);
     setUName(''); setUImgs([]); setShowUp(false); notify('写真を共有しました');
   };
@@ -299,7 +298,6 @@ ${schedT}
     { id: 'rsvp', icon: Send, l: '参加表明' },
     { id: 'telegram', icon: Heart, l: 'お祝い電報' },
     { id: 'gallery', icon: Camera, l: '写真館' },
-    ...(cfg.showMediaPage ? [{ id: 'media', icon: Play, l: 'メディア' }] : []),
   ];
 
   const Modal = ({ children, onClose, wide }) => (
@@ -312,7 +310,7 @@ ${schedT}
     </div>
   );
 
-  const isGuestPage = ['home', 'rsvp', 'telegram', 'gallery', 'media'].includes(page);
+  const isGuestPage = ['home', 'rsvp', 'telegram', 'gallery'].includes(page);
 
   // ── ローディング画面 ──
   if (!ready) {
@@ -387,6 +385,7 @@ ${schedT}
                 <p className="text-sm md:text-base text-neutral-500 mb-10 tracking-wide">{new Date(cfg.eventDate).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button onClick={() => go('rsvp')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>参加を表明する</button>
+
                   <button onClick={() => setShowMsg(true)} className="px-7 py-3.5 text-sm font-semibold bg-white border border-neutral-200 shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style={{ borderRadius: T.r, color: T.c }}><MessageSquare size={15} /> お祝いメッセージを送る</button>
                 </div>
               </div>
@@ -411,99 +410,7 @@ ${schedT}
         )}
 
         {/* ═══ RSVP ═══ */}
-        {page === 'rsvp' && (
-          <div className="max-w-md mx-auto px-5 py-16 fin">
-            <ST title="参加表明" sub="RSVP" />
-            <div className="bg-white p-6 shadow-lg border border-neutral-100" style={{ borderRadius: T.cr }}>
-              {closed ? (
-                <div className="text-center py-10">
-                  <AlertCircle size={36} className="mx-auto text-neutral-300 mb-3" />
-                  <h3 className="text-lg font-semibold text-neutral-700">受付は終了しました</h3>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <Field label="お名前 *">
-                    <input 
-                      key="rsvp-name"
-                      className={iCls} 
-                      placeholder="例: 山田太郎" 
-                      value={rName} 
-                      onChange={e => setRName(e.target.value)}
-                      onCompositionStart={() => setIsComposing(true)}
-                      onCompositionEnd={() => setIsComposing(false)}
-                      enterKeyHint="done"
-                    />
-                  </Field>
-                  
-                  <Field label={<>メールアドレス {cfg.autoReplyEnabled && <span className="text-rose-400 font-normal">（お礼メール送付先）</span>}</>}>
-                    <input 
-                      key="rsvp-email"
-                      type="email" 
-                      className={iCls} 
-                      placeholder="example@mail.com" 
-                      value={rEmail} 
-                      onChange={e => setREmail(e.target.value)}
-                      onCompositionStart={() => setIsComposing(true)}
-                      onCompositionEnd={() => setIsComposing(false)}
-                      enterKeyHint="done"
-                    />
-                    {cfg.autoReplyEnabled && <p className="text-[10px] text-neutral-400 mt-1">✉️ AIが作成したお礼メールが届きます</p>}
-                  </Field>
-                  
-                  <Field label="出欠">
-                    <div className="grid grid-cols-2 gap-2">
-                      {['yes', 'no'].map(v => (
-                        <button 
-                          key={v} 
-                          onClick={() => setRAtt(v)} 
-                          className={`py-2.5 text-sm font-semibold border-2 rounded-lg transition-all ${rAtt === v ? 'text-white shadow-md' : 'bg-white text-neutral-400 border-neutral-100'}`} 
-                          style={rAtt === v ? { backgroundColor: T.c, borderColor: T.c } : {}}
-                        >
-                          {v === 'yes' ? '🎉 出席します' : '😢 欠席します'}
-                        </button>
-                      ))}
-                    </div>
-                  </Field>
-                  
-                  <Field label={
-                    <span className="flex items-center gap-2">
-                      メッセージ（任意）
-                      <Tip text="AIが文章を整えてくれます" />
-                      {rMsg && (
-                        <button 
-                          onClick={refineMsg} 
-                          disabled={aiRefining} 
-                          className="text-[10px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 text-purple-600 hover:bg-purple-100 disabled:opacity-40"
-                        >
-                          {aiRefining ? <Loader2 size={10} className="animate-spin" /> : <Wand2 size={10} />} AI校正
-                        </button>
-                      )}
-                    </span>
-                  }>
-                    <textarea 
-                      key="rsvp-msg"
-                      className={iCls + " h-24 resize-none"} 
-                      placeholder="お祝いメッセージ..." 
-                      value={rMsg} 
-                      onChange={e => setRMsg(e.target.value)}
-                      onCompositionStart={() => setIsComposing(true)}
-                      onCompositionEnd={() => setIsComposing(false)}
-                    />
-                  </Field>
-                  
-                  <button 
-                    onClick={doRsvp} 
-                    disabled={!rName || isComposing} 
-                    className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98] transition-all" 
-                    style={btnS}
-                  >
-                    回答を送信
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {page === 'rsvp' && (<div className="max-w-md mx-auto px-5 py-16 fin"><ST title="参加表明" sub="RSVP" /><div className="bg-white p-6 shadow-lg border border-neutral-100" style={{ borderRadius: T.cr }}>{closed ? <div className="text-center py-10"><AlertCircle size={36} className="mx-auto text-neutral-300 mb-3" /><h3 className="text-lg font-semibold text-neutral-700">受付は終了しました</h3></div> : (<div className="space-y-4"><Field label="お名前 *"><input key="rsvp-name" className={iCls} placeholder="例: 山田太郎" value={rName} onChange={e => setRName(e.target.value)} /></Field><Field label={<>メールアドレス {cfg.autoReplyEnabled && <span className="text-rose-400 font-normal">（お礼メール送付先）</span>}</>}><input key="rsvp-email" type="email" className={iCls} placeholder="example@mail.com" value={rEmail} onChange={e => setREmail(e.target.value)} />{cfg.autoReplyEnabled && <p className="text-[10px] text-neutral-400 mt-1">✉️ AIが作成したお礼メールが届きます</p>}</Field><Field label="出欠"><div className="grid grid-cols-2 gap-2">{['yes', 'no'].map(v => (<button key={v} onClick={() => setRAtt(v)} className={`py-2.5 text-sm font-semibold border-2 rounded-lg transition-all ${rAtt === v ? 'text-white shadow-md' : 'bg-white text-neutral-400 border-neutral-100'}`} style={rAtt === v ? { backgroundColor: T.c, borderColor: T.c } : {}}>{v === 'yes' ? '🎉 出席します' : '😢 欠席します'}</button>))}</div></Field><Field label={<span className="flex items-center gap-2">メッセージ（任意）<Tip text="AIが文章を整えてくれます" />{rMsg && <button onClick={refineMsg} disabled={aiRefining} className="text-[10px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 text-purple-600 hover:bg-purple-100 disabled:opacity-40">{aiRefining ? <Loader2 size={10} className="animate-spin" /> : <Wand2 size={10} />} AI校正</button>}</span>}><textarea key="rsvp-msg" className={iCls + " h-24 resize-none"} placeholder="お祝いメッセージ..." value={rMsg} onChange={e => setRMsg(e.target.value)} /></Field><button onClick={doRsvp} disabled={!rName} className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98] transition-all" style={btnS}>回答を送信</button></div>)}</div></div>)}
 
         {/* ═══ TELEGRAMS ═══ */}
         {page === 'telegram' && (<div className="max-w-3xl mx-auto px-5 py-16 fin"><ST title="皆様からのメッセージ" sub="Telegrams" /><div className="flex justify-center mb-8"><button onClick={() => setShowMsg(true)} className="px-5 py-2.5 text-xs font-semibold flex items-center gap-1.5 shadow-md active:scale-95" style={btnS}><Plus size={13} /> メッセージを送る</button></div>{msgs.length === 0 ? <p className="text-center text-neutral-300 py-14 italic text-sm">メッセージを待っています...</p> : (<div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">{[...msgs].sort((a, b) => new Date(b.ts) - new Date(a.ts)).map(m => (<div key={m.id} className="break-inside-avoid bg-white p-5 shadow-sm border border-neutral-100 relative group" style={{ borderRadius: T.cr }}><Quote className="absolute top-3 right-3 opacity-[.06]" size={28} style={{ color: T.c }} /><p className="text-neutral-600 leading-relaxed mb-3 text-[13px] italic">"{m.text}"</p><div className="flex items-center justify-between border-t border-neutral-50 pt-2.5"><span className="text-xs font-semibold" style={{ color: T.c }}>{m.name} 様</span>{isAdmin && <button onClick={() => deleteMessage(m.id)} className="text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 size={12} /></button>}</div></div>))}</div>)}</div>)}
@@ -511,107 +418,112 @@ ${schedT}
         {/* ═══ GALLERY ═══ */}
         {page === 'gallery' && (<div className="max-w-4xl mx-auto px-5 py-16 fin"><ST title="思い出の写真館" sub="Gallery" /><div className="flex justify-center gap-3 mb-8"><button onClick={() => slideItems.length > 0 && setSlide(0)} className="px-5 py-2.5 bg-white border border-neutral-200 text-neutral-600 text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95" style={{ borderRadius: T.r }}><Play size={13} /> スライドショー</button><button onClick={() => setShowUp(true)} className="px-5 py-2.5 text-xs font-semibold flex items-center gap-1.5 shadow-md active:scale-95" style={btnS}><Plus size={13} /> 写真を投稿</button></div>{photos.length === 0 ? <p className="text-center text-neutral-300 py-14 italic text-sm">まだ写真がありません</p> : (<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">{[...photos].sort((a, b) => new Date(b.ts) - new Date(a.ts)).map(p => (<div key={p.id} className="aspect-square bg-white p-1 shadow-sm border border-neutral-100 overflow-hidden group relative" style={{ borderRadius: T.cr }}><img src={p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" style={{ borderRadius: `calc(${T.cr} - 4px)` }} /><div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3"><span className="text-white text-[10px] font-medium mb-1.5 truncate">by {p.uploader}</span><div className="flex justify-between items-center"><button onClick={() => doLike(p.id)} className="text-rose-400 flex items-center gap-1 text-xs font-semibold"><Heart size={12} fill={p.likes > 0 ? 'currentColor' : 'none'} /> {p.likes || 0}</button>{isAdmin && <button onClick={() => deletePhoto(p.id)} className="text-white/50 hover:text-red-400"><Trash2 size={12} /></button>}</div></div></div>))}</div>)}</div>)}
 
-        {/* ═══ MEDIA ═══ */}
+        {/* ═══ ADMIN ═══ */}
         {page === 'media' && (
-          <div className="min-h-screen bg-gradient-to-br from-rose-50 via-amber-50 to-pink-50 py-16 px-5">
-            <div className="max-w-5xl mx-auto">
-              <div className="text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-4" style={{ color: cfg.color || '#e11d48' }}>メディア</h1>
-                <p className="text-sm text-neutral-500">Tomoeちゃんの思い出と楽曲</p>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-amber-50 to-pink-50 py-16 px-5">
+      <div className="max-w-5xl mx-auto">
+        {/* ヘッダー */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-4" style={{ color: cfg.themeColor || '#e11d48' }}>
+            メディア
+          </h1>
+          <p className="text-sm text-neutral-500">Tomoeちゃんの思い出と楽曲</p>
+        </div>
 
-              {cfg.media?.songs && cfg.media.songs.length > 0 && (
-                <div className="mb-16">
-                  <h2 className="text-2xl font-light mb-6 text-neutral-800">楽曲</h2>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {cfg.media.songs.map((song, i) => (
-                      <div key={i} className="bg-white rounded-xl shadow-md p-6">
-                        <h3 className="text-lg font-medium mb-4 text-neutral-800">{song.title}</h3>
-                        {song.type === 'suno' && (
-                          <iframe
-                            src={song.url.replace('/song/', '/embed/')}
-                            className="w-full h-48 rounded-lg"
-                            frameBorder="0"
-                            allow="autoplay; clipboard-write; encrypted-media"
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
+        {/* 楽曲セクション */}
+        {cfg.media?.songs && cfg.media.songs.length > 0 && (
+          <div className="mb-16">
+            <h2 className="text-2xl font-light mb-6 text-neutral-800">楽曲</h2>
+            <div className="grid gap-6 md:grid-cols-2">
+              {cfg.media.songs.map((song, i) => (
+                <div key={i} className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-lg font-medium mb-4 text-neutral-800">{song.title}</h3>
+                  {song.type === 'suno' && (
+                    <iframe
+                      src={song.url.replace('/song/', '/embed/')}
+                      className="w-full h-48 rounded-lg"
+                      frameBorder="0"
+                      allow="autoplay; clipboard-write; encrypted-media"
+                    />
+                  )}
                 </div>
-              )}
-
-              {cfg.media?.scores && cfg.media.scores.length > 0 && (
-                <div className="mb-16">
-                  <h2 className="text-2xl font-light mb-6 text-neutral-800">楽譜</h2>
-                  <div className="grid gap-6">
-                    {cfg.media.scores.map((score, i) => (
-                      <div key={i} className="bg-white rounded-xl shadow-md p-6">
-                        <h3 className="text-lg font-medium mb-4 text-neutral-800">{score.title}</h3>
-                        <iframe
-                          src={score.url}
-                          className="w-full h-[600px] rounded-lg"
-                          frameBorder="0"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {cfg.media?.timeline && cfg.media.timeline.length > 0 && (
-                <div className="mb-16">
-                  <h2 className="text-2xl font-light mb-6 text-neutral-800">成長の記録</h2>
-                  <div className="space-y-8">
-                    {[...cfg.media.timeline].sort((a, b) => new Date(b.date) - new Date(a.date)).map((event, i) => (
-                      <div key={i} className="flex gap-6">
-                        <div className="flex-shrink-0 w-24 text-right">
-                          <div className="text-sm font-medium text-neutral-600">
-                            {new Date(event.date).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0 pt-1">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cfg.color || '#e11d48' }} />
-                        </div>
-                        <div className="flex-1 pb-8 border-b border-neutral-100">
-                          {event.imageUrl && (
-                            <img
-                              src={event.imageUrl}
-                              alt={event.title}
-                              className="w-full max-w-md h-48 object-cover rounded-lg mb-4 shadow-md"
-                            />
-                          )}
-                          <h3 className="text-lg font-medium mb-2 text-neutral-800">{event.title}</h3>
-                          <p className="text-sm text-neutral-600">{event.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="text-center mt-12">
-                <button
-                  onClick={() => go('home')}
-                  className="px-6 py-3 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all rounded-full"
-                  style={{ backgroundColor: cfg.color || '#e11d48', color: 'white' }}
-                >
-                  ← トップへ戻る
-                </button>
-              </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* ═══ ADMIN ═══ */}
-        {page === 'admin' && (<div className="max-w-3xl mx-auto px-5 py-10 fin">{!isAdmin ? (<div className="max-w-xs mx-auto pt-8"><ST title="管理画面" sub="CMS Login" /><div className="bg-white p-7 shadow-lg border border-neutral-100" style={{ borderRadius: T.cr }}><div className="w-12 h-12 rounded-xl bg-neutral-50 flex items-center justify-center mx-auto mb-5"><Lock size={20} className="text-neutral-400" /></div><div className="space-y-3"><input className={iCls} placeholder="Admin ID" value={loginId} onChange={e => setLoginId(e.target.value)} /><input className={iCls} type="password" placeholder="Password" value={loginPw} onChange={e => setLoginPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && doLogin()} /><button onClick={doLogin} className="w-full py-3 text-sm font-semibold shadow-lg active:scale-[0.98]" style={btnS}>ログイン</button></div></div><button onClick={() => go('home')} className="text-xs text-neutral-400 mt-4 mx-auto block hover:text-neutral-600">← トップへ戻る</button></div>) : (<div className="space-y-5">
-          <div className="bg-white p-4 border border-neutral-100 shadow-sm flex flex-col gap-3" style={{ borderRadius: T.cr }}><div className="flex justify-between items-center"><h2 className="text-base font-semibold text-neutral-900">管理パネル</h2><div className="flex items-center gap-2"><button onClick={() => go('home')} className="text-xs text-neutral-400 hover:text-neutral-600">トップへ</button><button onClick={() => { setIsAdmin(false); go('home'); }} className="text-neutral-300 hover:text-neutral-500"><Unlock size={16} /></button></div></div><div className="flex gap-1 overflow-x-auto pb-1 flex-wrap">{[{ id: 'settings', icon: Settings, l: '基本' },{ id: 'design', icon: Palette, l: 'デザイン' },{ id: 'media', icon: Play, l: 'メディア' },{ id: 'email', icon: Sparkles, l: '自動返信', badge: draftCt },{ id: 'schedule', icon: ListTodo, l: 'スケジュール' },{ id: 'updates', icon: Newspaper, l: 'お知らせ' },{ id: 'guests', icon: Users, l: 'ゲスト' },{ id: 'aitools', icon: Wand2, l: 'AI Tools' },{ id: 'data', icon: Database, l: 'データ' }].map(t => (<button key={t.id} onClick={() => setATab(t.id)} className={`flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold whitespace-nowrap rounded-md transition-all ${aTab === t.id ? 'text-white shadow-md' : 'bg-neutral-50 text-neutral-400 hover:bg-neutral-100'}`} style={aTab === t.id ? { backgroundColor: T.c } : {}}><t.icon size={12} />{t.l}{t.badge > 0 && <span className="ml-0.5 bg-amber-400 text-amber-900 text-[8px] font-bold px-1.5 py-0.5 rounded-full">{t.badge}</span>}</button>))}</div></div>
+        {/* 楽譜セクション */}
+        {cfg.media?.scores && cfg.media.scores.length > 0 && (
+          <div className="mb-16">
+            <h2 className="text-2xl font-light mb-6 text-neutral-800">楽譜</h2>
+            <div className="grid gap-6">
+              {cfg.media.scores.map((score, i) => (
+                <div key={i} className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-lg font-medium mb-4 text-neutral-800">{score.title}</h3>
+                  <iframe
+                    src={score.url}
+                    className="w-full h-[600px] rounded-lg"
+                    frameBorder="0"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
+        {/* タイムラインセクション */}
+        {cfg.media?.timeline && cfg.media.timeline.length > 0 && (
+          <div className="mb-16">
+            <h2 className="text-2xl font-light mb-6 text-neutral-800">成長の記録</h2>
+            <div className="space-y-8">
+              {[...cfg.media.timeline].sort((a, b) => new Date(b.date) - new Date(a.date)).map((event, i) => (
+                <div key={i} className="flex gap-6">
+                  <div className="flex-shrink-0 w-24 text-right">
+                    <div className="text-sm font-medium text-neutral-600">
+                      {new Date(event.date).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 pt-1">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cfg.themeColor || '#e11d48' }} />
+                  </div>
+                  <div className="flex-1 pb-8 border-b border-neutral-100">
+                    {event.imageUrl && (
+                      <img
+                        src={event.imageUrl}
+                        alt={event.title}
+                        className="w-full max-w-md h-48 object-cover rounded-lg mb-4 shadow-md"
+                      />
+                    )}
+                    <h3 className="text-lg font-medium mb-2 text-neutral-800">{event.title}</h3>
+                    <p className="text-sm text-neutral-600">{event.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 戻るボタン */}
+        <div className="text-center mt-12">
+          <button
+            onClick={() => go('home')}
+            className="px-6 py-3 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all rounded-full"
+            style={{ backgroundColor: cfg.themeColor || '#e11d48', color: 'white' }}
+          >
+            ← トップへ戻る
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+
+    {page === 'admin' && (<div className="max-w-3xl mx-auto px-5 py-10 fin">{!isAdmin ? (<div className="max-w-xs mx-auto pt-8"><ST title="管理画面" sub="CMS Login" /><div className="bg-white p-7 shadow-lg border border-neutral-100" style={{ borderRadius: T.cr }}><div className="w-12 h-12 rounded-xl bg-neutral-50 flex items-center justify-center mx-auto mb-5"><Lock size={20} className="text-neutral-400" /></div><div className="space-y-3"><input className={iCls} placeholder="Admin ID" value={loginId} onChange={e => setLoginId(e.target.value)} /><input className={iCls} type="password" placeholder="Password" value={loginPw} onChange={e => setLoginPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && doLogin()} /><button onClick={doLogin} className="w-full py-3 text-sm font-semibold shadow-lg active:scale-[0.98]" style={btnS}>ログイン</button></div></div><button onClick={() => go('home')} className="text-xs text-neutral-400 mt-4 mx-auto block hover:text-neutral-600">← トップへ戻る</button></div>) : (<div className="space-y-5">
+          <div className="bg-white p-4 border border-neutral-100 shadow-sm flex flex-col gap-3" style={{ borderRadius: T.cr }}><div className="flex justify-between items-center"><h2 className="text-base font-semibold text-neutral-900">管理パネル</h2><div className="flex items-center gap-2"><button onClick={() => go('home')} className="text-xs text-neutral-400 hover:text-neutral-600">トップへ</button><button onClick={() => { setIsAdmin(false); go('home'); }} className="text-neutral-300 hover:text-neutral-500"><Unlock size={16} /></button></div></div><div className="flex gap-1 overflow-x-auto pb-1 flex-wrap">{[{ id: 'settings', icon: Settings, l: '基本' },{ id: 'design', icon: Palette, l: 'デザイン' },{ id: 'email', icon: Sparkles, l: '自動返信', badge: draftCt },{ id: 'schedule', icon: ListTodo, l: 'スケジュール' },{ id: 'updates', icon: Newspaper, l: 'お知らせ' },{ id: 'guests', icon: Users, l: 'ゲスト' },{ id: 'aitools', icon: Wand2, l: 'AI Tools' },{ id: 'data', icon: Database, l: 'データ' }].map(t => (<button key={t.id} onClick={() => setATab(t.id)} className={`flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold whitespace-nowrap rounded-md transition-all ${aTab === t.id ? 'text-white shadow-md' : 'bg-neutral-50 text-neutral-400 hover:bg-neutral-100'}`} style={aTab === t.id ? { backgroundColor: T.c } : {}}><t.icon size={12} />{t.l}{t.badge > 0 && <span className="ml-0.5 bg-amber-400 text-amber-900 text-[8px] font-bold px-1.5 py-0.5 rounded-full">{t.badge}</span>}</button>))}</div></div>
+
+          {/* Admin tabs content — 同じ構造、操作は hook 経由 */}
           {aTab === 'settings' && (<div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{ borderRadius: T.cr }}><h3 className="font-semibold text-neutral-900 mb-5 text-sm">基本設定</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-5"><div className="space-y-3"><Field label="主役の名前"><input className={iCls} value={cfg.name} onChange={e => sc({ name: e.target.value })} /></Field><Field label="会場名"><input className={iCls} value={cfg.venue} onChange={e => sc({ venue: e.target.value })} /></Field><Field label="詳細住所"><input className={iCls} value={cfg.address} onChange={e => sc({ address: e.target.value })} /></Field><Field label="Amazon URL"><input className={iCls} value={cfg.amazonUrl} onChange={e => sc({ amazonUrl: e.target.value })} /></Field></div><div className="space-y-3"><div className="grid grid-cols-2 gap-2"><Field label="生年月日"><input type="date" className={iCls} value={cfg.birthDate} onChange={e => sc({ birthDate: e.target.value })} /></Field><Field label="イベント日"><input type="date" className={iCls} value={cfg.eventDate} onChange={e => sc({ eventDate: e.target.value })} /></Field></div><Field label="RSVP締切日"><input type="date" className={iCls} value={cfg.rsvpDeadline} onChange={e => sc({ rsvpDeadline: e.target.value })} /></Field><Field label="告知バナー"><input className="w-full px-3.5 py-2.5 bg-amber-50 border border-amber-200/60 text-sm rounded-lg focus:outline-none" placeholder="空欄で非表示" value={cfg.announcement} onChange={e => sc({ announcement: e.target.value })} /></Field><Field label="サブタイトル"><input className={iCls} value={cfg.heroSub} onChange={e => sc({ heroSub: e.target.value })} /></Field></div></div></div>)}
 
           {aTab === 'design' && (<div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{ borderRadius: T.cr }}><h3 className="font-semibold text-neutral-900 mb-5 text-sm">デザイン</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="space-y-5"><Field label="テーマカラー"><div className="flex items-center gap-3"><input type="color" className="w-10 h-10 cursor-pointer rounded-lg border-0" value={cfg.color} onChange={e => sc({ color: e.target.value })} /><span className="font-mono text-sm font-semibold" style={{ color: T.c }}>{cfg.color}</span></div></Field><Field label="スタイル"><div className="grid grid-cols-3 gap-2">{[{ id: 'elegant', l: 'エレガント', d: '明朝体' }, { id: 'modern', l: 'モダン', d: 'ゴシック' }, { id: 'playful', l: 'ポップ', d: '丸文字' }].map(s => (<button key={s.id} onClick={() => sc({ style: s.id })} className={`py-2.5 px-2 text-center border-2 rounded-lg transition-all ${cfg.style === s.id ? '' : 'border-neutral-100 text-neutral-400'}`} style={cfg.style === s.id ? { borderColor: T.c, backgroundColor: T.c + '08', color: T.c } : {}}><div className="text-[11px] font-bold">{s.l}</div><div className="text-[9px] opacity-60">{s.d}</div></button>))}</div></Field></div><Field label="トップ画像"><div onClick={() => topRef.current?.click()} className="w-full aspect-video bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center cursor-pointer overflow-hidden rounded-lg">{cfg.topImg ? <img src={cfg.topImg} className="w-full h-full object-cover" alt="" /> : <div className="text-neutral-300 flex flex-col items-center gap-1.5"><Camera size={28} /><span className="text-[11px]">クリック</span></div>}<input ref={topRef} type="file" accept="image/*" onChange={doTopImg} className="hidden" /></div>{cfg.topImg && <button onClick={() => sc({ topImg: '' })} className="text-[11px] text-red-400 mt-1">削除</button>}</Field><Field label="メディアページ"><div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg mb-3"><span className="text-sm font-semibold text-neutral-800">メディアページを表示</span><button onClick={() => sc({ showMediaPage: !cfg.showMediaPage })} className={`w-12 h-7 rounded-full transition-all relative ${cfg.showMediaPage ? '' : 'bg-neutral-200'}`} style={cfg.showMediaPage ? { backgroundColor: T.c } : {}}><div className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-1 transition-all ${cfg.showMediaPage ? 'left-6' : 'left-1'}`} /></button></div>{cfg.showMediaPage && <button onClick={() => go('media')} className="w-full py-2.5 text-sm font-semibold bg-white border border-neutral-200 shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 rounded-lg" style={{ color: T.c }}><Eye size={14} /> メディアページをプレビュー</button>}</Field></div></div>)}
-
-          {aTab === 'media' && (<div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{ borderRadius: T.cr }}><h3 className="font-semibold text-neutral-900 mb-5 text-sm">メディアコンテンツ管理</h3><div className="mb-6 p-4 bg-neutral-50 rounded-lg"><div className="flex justify-between items-center mb-3"><h4 className="font-semibold text-sm">🎵 楽曲</h4><button onClick={() => { const newSong = { title: '新しい楽曲', type: 'suno', url: '' }; sc({ media: { ...cfg.media, songs: [...(cfg.media?.songs || []), newSong] }}); }} className="text-xs px-2 py-1 bg-white border border-neutral-200 rounded-md hover:bg-neutral-50">+ 追加</button></div>{cfg.media?.songs?.map((song, i) => (<div key={i} className="bg-white p-3 mb-2 rounded-md border border-neutral-200"><input className={iCls + " mb-2"} placeholder="曲名" value={song.title} onChange={e => { const newSongs = [...cfg.media.songs]; newSongs[i] = { ...newSongs[i], title: e.target.value }; sc({ media: { ...cfg.media, songs: newSongs }}); }} /><input className={iCls} placeholder="Suno URL (例: https://suno.com/song/...)" value={song.url} onChange={e => { const newSongs = [...cfg.media.songs]; newSongs[i] = { ...newSongs[i], url: e.target.value }; sc({ media: { ...cfg.media, songs: newSongs }}); }} /><button onClick={() => { const newSongs = cfg.media.songs.filter((_, idx) => idx !== i); sc({ media: { ...cfg.media, songs: newSongs }}); }} className="text-xs text-red-400 mt-2 hover:text-red-600">削除</button></div>))}</div><div className="mb-6 p-4 bg-neutral-50 rounded-lg"><div className="flex justify-between items-center mb-3"><h4 className="font-semibold text-sm">📄 楽譜</h4><button onClick={() => { const newScore = { title: '新しい楽譜', url: '' }; sc({ media: { ...cfg.media, scores: [...(cfg.media?.scores || []), newScore] }}); }} className="text-xs px-2 py-1 bg-white border border-neutral-200 rounded-md hover:bg-neutral-50">+ 追加</button></div>{cfg.media?.scores?.map((score, i) => (<div key={i} className="bg-white p-3 mb-2 rounded-md border border-neutral-200"><input className={iCls + " mb-2"} placeholder="楽譜タイトル" value={score.title} onChange={e => { const newScores = [...cfg.media.scores]; newScores[i] = { ...newScores[i], title: e.target.value }; sc({ media: { ...cfg.media, scores: newScores }}); }} /><input className={iCls} placeholder="Google Drive PDF URL" value={score.url} onChange={e => { const newScores = [...cfg.media.scores]; newScores[i] = { ...newScores[i], url: e.target.value }; sc({ media: { ...cfg.media, scores: newScores }}); }} /><button onClick={() => { const newScores = cfg.media.scores.filter((_, idx) => idx !== i); sc({ media: { ...cfg.media, scores: newScores }}); }} className="text-xs text-red-400 mt-2 hover:text-red-600">削除</button></div>))}</div><button onClick={() => go('media')} className="w-full py-2.5 text-sm font-semibold bg-white border-2 shadow-md hover:shadow-lg active:scale-95 transition-all rounded-lg flex items-center justify-center gap-2" style={{ borderColor: T.c, color: T.c }}><Eye size={14} /> メディアページをプレビュー</button></div>)}
 
           {aTab === 'email' && (<div className="space-y-5"><div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{ borderRadius: T.cr }}><div className="flex items-center gap-2 mb-4"><Sparkles size={16} style={{ color: T.c }} /><h3 className="font-semibold text-neutral-900 text-sm">AI自動返信メール</h3><Tip text="オープンハウス案内・スケジュール注意事項も自動で含まれます" /></div><div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg mb-4"><span className="text-sm font-semibold text-neutral-800">自動返信を有効にする</span><button onClick={() => sc({ autoReplyEnabled: !cfg.autoReplyEnabled })} className={`w-12 h-7 rounded-full transition-all relative ${cfg.autoReplyEnabled ? '' : 'bg-neutral-200'}`} style={cfg.autoReplyEnabled ? { backgroundColor: T.c } : {}}><div className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-1 transition-all ${cfg.autoReplyEnabled ? 'left-6' : 'left-1'}`} /></button></div><div className="flex gap-3 items-end"><div className="flex-1"><Field label="差出人名"><input className={iCls} value={cfg.senderName} onChange={e => sc({ senderName: e.target.value })} /></Field></div><button onClick={async () => { setGenLoading('test'); const body = await genEmail('テスト太郎', 'yes'); setPreviewDraft({ id: 'test', name: 'テスト太郎', email: 'test@example.com', subject: `ご出席ありがとうございます🎉`, body, att: 'yes' }); setGenLoading(null); }} disabled={!!genLoading} className="px-4 py-2.5 text-[11px] font-semibold shadow-md disabled:opacity-50 flex items-center gap-1 shrink-0" style={btnS}>{genLoading === 'test' ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />} プレビュー</button></div></div><div className="bg-white p-6 border border-neutral-100 shadow-sm" style={{ borderRadius: T.cr }}><div className="flex items-center justify-between mb-4"><h3 className="font-semibold text-neutral-900 text-sm">返信メール一覧 <span className="text-xs font-normal">{draftCt > 0 && <span className="text-amber-600">{draftCt}件未送信</span>}{sentCt > 0 && <span className="text-emerald-600 ml-1">{sentCt}件済</span>}</span></h3>{draftCt > 0 && <button onClick={() => emailDrafts.filter(d => d.status === 'draft').forEach((d, i) => setTimeout(() => openGmail(d), i * 800))} className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold shadow-md" style={btnS}><Mail size={12} /> 一括送信</button>}</div>{emailDrafts.length === 0 ? <div className="text-center py-8"><MailOpen size={32} className="mx-auto text-neutral-200 mb-2" /><p className="text-sm text-neutral-400">RSVPが届くとAIがメールを作成</p></div> : (<div className="space-y-3">{[...emailDrafts].sort((a, b) => new Date(b.ts) - new Date(a.ts)).map(d => (<div key={d.id} className={`p-4 rounded-lg border ${d.status === 'sent' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-white border-neutral-100 shadow-sm'}`}><div className="flex items-center justify-between mb-2 flex-wrap gap-1"><div className="flex items-center gap-2 flex-wrap">{d.status === 'sent' ? <CheckCircle2 size={15} className="text-emerald-500" /> : <Mail size={15} style={{ color: T.c }} />}<span className="text-sm font-semibold">{d.name}</span><span className="text-[10px] text-neutral-400">{d.email}</span><span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${d.att === 'yes' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{d.att === 'yes' ? '出席' : '欠席'}</span></div><span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${d.status === 'sent' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{d.status === 'sent' ? '送信済' : '未送信'}</span></div><p className="text-[12px] text-neutral-500 leading-relaxed mb-3 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{d.body}</p><div className="flex items-center gap-1.5 flex-wrap">{d.status === 'draft' && <button onClick={() => openGmail(d)} className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold text-white rounded-md bg-blue-600 shadow-md"><Mail size={11} /> Gmail</button>}<button onClick={() => setPreviewDraft(d)} className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold bg-neutral-100 text-neutral-600 rounded-md"><Eye size={11} /></button><button onClick={() => regenDraft(d.id)} disabled={!!genLoading} className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold bg-neutral-100 text-neutral-600 rounded-md disabled:opacity-30">{genLoading === d.rsvpId ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}</button><button onClick={() => copyTxt(d.body)} className="px-2.5 py-1.5 text-[11px] font-semibold bg-neutral-100 text-neutral-600 rounded-md"><Copy size={11} /></button><button onClick={() => deleteEmailDraft(d.id)} className="text-neutral-300 hover:text-red-500 ml-auto"><Trash2 size={12} /></button></div></div>))}</div>)}</div></div>)}
 
@@ -631,77 +543,9 @@ ${schedT}
       {isGuestPage && (<footer className="bg-white border-t border-neutral-100 py-8 px-6 text-center"><p className="text-xs text-neutral-300 mb-3">{cfg.name}の{age}歳 生誕祭 🎂</p><button onClick={() => go('admin')} className="text-[10px] text-neutral-300 hover:text-neutral-500 flex items-center gap-1 mx-auto"><Lock size={10} /> 管理者ログイン</button></footer>)}
 
       {/* Modals */}
-      {showUp && (
-        <Modal onClose={() => { setShowUp(false); setUImgs([]); setUName(''); }}>
-          <h3 className="text-lg font-semibold text-neutral-900 mb-4">写真を投稿</h3>
-          <div className="space-y-4">
-            <div onClick={() => fileRef.current?.click()} className="w-full aspect-[16/10] bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center cursor-pointer overflow-hidden rounded-lg">
-              {uImgs.length ? (
-                <div className="grid grid-cols-3 gap-1 p-2 w-full h-full overflow-y-auto">
-                  {uImgs.map((p, i) => <img key={i} src={p} className="w-full h-16 object-cover rounded" alt="" />)}
-                </div>
-              ) : (
-                <div className="text-neutral-300 flex flex-col items-center gap-1.5">
-                  <Upload size={28} />
-                  <span className="text-[11px]">最大10枚</span>
-                </div>
-              )}
-              <input ref={fileRef} type="file" accept="image/*" multiple onChange={doFiles} className="hidden" />
-            </div>
-            <input 
-              className={iCls + " text-center font-medium"} 
-              placeholder="投稿者のお名前" 
-              value={uName} 
-              onChange={e => setUName(e.target.value)}
-              onCompositionStart={() => setIsComposing(true)}
-              onCompositionEnd={() => setIsComposing(false)}
-              enterKeyHint="done"
-            />
-            <button 
-              onClick={doUpload} 
-              disabled={!uImgs.length || !uName || isComposing} 
-              className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98]" 
-              style={btnS}
-            >
-              アップロード
-            </button>
-          </div>
-        </Modal>
-      )}
+      {showUp && <Modal onClose={() => { setShowUp(false); setUImgs([]); setUName(''); }}><h3 className="text-lg font-semibold text-neutral-900 mb-4">写真を投稿</h3><div className="space-y-4"><div onClick={() => fileRef.current?.click()} className="w-full aspect-[16/10] bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center cursor-pointer overflow-hidden rounded-lg">{uImgs.length ? <div className="grid grid-cols-3 gap-1 p-2 w-full h-full overflow-y-auto">{uImgs.map((p, i) => <img key={i} src={p} className="w-full h-16 object-cover rounded" alt="" />)}</div> : <div className="text-neutral-300 flex flex-col items-center gap-1.5"><Upload size={28} /><span className="text-[11px]">最大10枚</span></div>}<input ref={fileRef} type="file" accept="image/*" multiple onChange={doFiles} className="hidden" /></div><input className={iCls + " text-center font-medium"} placeholder="投稿者のお名前" value={uName} onChange={e => setUName(e.target.value)} /><button onClick={doUpload} disabled={!uImgs.length || !uName} className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98]" style={btnS}>アップロード</button></div></Modal>}
 
-      {showMsg && (
-        <Modal onClose={() => setShowMsg(false)}>
-          <h3 className="text-lg font-semibold text-neutral-900 mb-0.5">お祝いメッセージ</h3>
-          <p className="text-[11px] text-neutral-400 mb-5">{cfg.name}ちゃんへ心を込めて</p>
-          <div className="space-y-4">
-            <input 
-              className={iCls + " font-medium"} 
-              placeholder="お名前" 
-              value={mName} 
-              onChange={e => setMName(e.target.value)}
-              onCompositionStart={() => setIsComposing(true)}
-              onCompositionEnd={() => setIsComposing(false)}
-              enterKeyHint="done"
-            />
-            <textarea 
-              className={iCls + " h-28 resize-none"} 
-              placeholder="メッセージ..." 
-              value={mText} 
-              onChange={e => setMText(e.target.value)}
-              onCompositionStart={() => setIsComposing(true)}
-              onCompositionEnd={() => setIsComposing(false)}
-            />
-            <button 
-              onClick={doMsg} 
-              disabled={!mName || !mText || isComposing} 
-              className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98]" 
-              style={btnS}
-            >
-              送信
-            </button>
-          </div>
-        </Modal>
-      )}
+      {showMsg && <Modal onClose={() => setShowMsg(false)}><h3 className="text-lg font-semibold text-neutral-900 mb-0.5">お祝いメッセージ</h3><p className="text-[11px] text-neutral-400 mb-5">{cfg.name}ちゃんへ心を込めて</p><div className="space-y-4"><input className={iCls + " font-medium"} placeholder="お名前" value={mName} onChange={e => setMName(e.target.value)} /><textarea className={iCls + " h-28 resize-none"} placeholder="メッセージ..." value={mText} onChange={e => setMText(e.target.value)} /><button onClick={doMsg} disabled={!mName || !mText} className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98]" style={btnS}>送信</button></div></Modal>}
 
       {previewDraft && <Modal onClose={() => setPreviewDraft(null)} wide><div className="flex items-center gap-2 mb-4"><Sparkles size={16} style={{ color: T.c }} /><h3 className="text-lg font-semibold">AIメール プレビュー</h3></div><div className="space-y-1.5 mb-4 text-xs"><div className="flex gap-2"><span className="font-semibold text-neutral-500 w-10">To:</span><span>{previewDraft.name} &lt;{previewDraft.email}&gt;</span></div><div className="flex gap-2"><span className="font-semibold text-neutral-500 w-10">件名:</span><span>{previewDraft.subject}</span></div><div className="flex gap-2"><span className="font-semibold text-neutral-500 w-10">From:</span><span>{cfg.senderName}</span></div></div><div className="bg-neutral-50 border border-neutral-100 rounded-lg p-4 mb-4"><pre className="text-sm text-neutral-700 whitespace-pre-wrap leading-relaxed font-sans">{previewDraft.body}</pre></div><div className="flex gap-2 justify-end"><button onClick={() => copyTxt(previewDraft.body)} className="flex items-center gap-1 px-3 py-2 text-[11px] font-semibold bg-neutral-100 text-neutral-600 rounded-md"><Copy size={12} /> コピー</button>{previewDraft.id !== 'test' && previewDraft.status !== 'sent' && <button onClick={() => { openGmail(previewDraft); setPreviewDraft(null); }} className="flex items-center gap-1 px-3 py-2 text-[11px] font-semibold text-white rounded-md bg-blue-600 shadow-md"><Mail size={12} /> Gmail送信</button>}</div></Modal>}
 
