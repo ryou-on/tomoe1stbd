@@ -1,4 +1,4 @@
-// src/App.jsx - 完全版（多言語対応 + IME完全修正）
+// src/App.jsx - 完全版（多言語対応 + IME完全修正 + Modal外部化）
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Heart, Calendar, MapPin, Camera, Send, Users, Gift, Play,
@@ -65,6 +65,8 @@ const translations = {
   }
 };
 
+/* ─── 共通コンポーネント（App外部で定義） ─── */
+
 const Tip = ({ text }) => {
   const [o, setO] = useState(false);
   return (
@@ -74,28 +76,48 @@ const Tip = ({ text }) => {
     </span>
   );
 };
+
 const Toast = ({ msg, onClose }) => {
   useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
   return <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-neutral-900 text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-2xl flex items-center gap-2" style={{ animation: 'slideUp .3s ease-out' }}><Check size={14} className="text-emerald-400" />{msg}</div>;
 };
+
 const ST = ({ title, sub, help }) => (
   <div className="text-center mb-10">
     <h2 className="text-2xl md:text-3xl font-light tracking-tight text-neutral-900 mb-1.5">{title}{help && <Tip text={help} />}</h2>
     {sub && <p className="text-[11px] font-semibold tracking-[.25em] uppercase text-neutral-400">{sub}</p>}
   </div>
 );
+
 const Field = ({ label, children }) => (
   <div><div className="text-[11px] font-semibold text-neutral-500 mb-1 select-none">{label}</div>{children}</div>
 );
 
+/* ✅ Modal を App の外で定義（安定した参照でフォーカス消失を防止） */
+const Modal = ({ children, onClose, wide, borderRadius }) => (
+  <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <div
+      className={`relative bg-white ${wide ? 'max-w-lg' : 'max-w-md'} w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto`}
+      style={{ borderRadius }}
+      onClick={e => e.stopPropagation()}
+    >
+      <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 z-10"><X size={18} /></button>
+      {children}
+    </div>
+  </div>
+);
+
+/* ─── メインApp ─── */
+
 export default function App() {
   const [lang, setLang] = useState(() => localStorage.getItem('lang') || 'ja');
   const t = (key) => translations[lang][key] || key;
-  
+
   useEffect(() => {
     localStorage.setItem('lang', lang);
   }, [lang]);
-  
+
   const toggleLang = () => setLang(l => l === 'ja' ? 'en' : 'ja');
 
   const store = useFirestore();
@@ -350,16 +372,6 @@ ${schedT}
     ...(cfg.showMediaPage ? [{ id: 'media', icon: Play, l: t('nav_media') }] : []),
   ];
 
-  const Modal = ({ children, onClose, wide }) => (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className={`relative bg-white ${wide ? 'max-w-lg' : 'max-w-md'} w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto`} style={{ borderRadius: T.cr }} onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 z-10"><X size={18} /></button>
-        {children}
-      </div>
-    </div>
-  );
-
   const isGuestPage = ['home', 'rsvp', 'telegram', 'gallery', 'media'].includes(page);
 
   if (!ready) {
@@ -426,6 +438,9 @@ ${schedT}
       )}
 
       <div className={`${cfg.announcement ? 'pt-8' : ''} ${isGuestPage ? 'md:pt-14' : ''} pb-24 md:pb-8`}>
+        {/* HOME */}
+        {page === 'home' && (
+          <>
             {/* お知らせ */}
             <div className="max-w-3xl mx-auto px-6 py-16 md:py-24">
               <ST title={t('updates')} />
@@ -491,7 +506,7 @@ ${schedT}
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
 
         {/* RSVP */}
@@ -659,8 +674,8 @@ ${schedT}
               <button onClick={() => { setIsAdmin(false); go('home'); }} className="px-4 py-2 text-sm font-medium text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50"><X size={14} className="inline mr-1" /> {lang === 'ja' ? '閉じる' : 'Close'}</button>
             </div>
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              {['settings', 'schedule', 'news', 'rsvps', 'messages', 'photos', 'emails'].map(t => (
-                <button key={t} onClick={() => setATab(t)} className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all ${aTab === t ? 'bg-rose-600 text-white shadow-md' : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50'}`}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+              {['settings', 'schedule', 'news', 'rsvps', 'messages', 'photos', 'emails'].map(tab => (
+                <button key={tab} onClick={() => setATab(tab)} className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all ${aTab === tab ? 'bg-rose-600 text-white shadow-md' : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50'}`}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>
               ))}
             </div>
 
@@ -913,7 +928,7 @@ ${schedT}
                                 <button onClick={() => regenDraft(d.id)} disabled={genLoading === d.rsvpId} className="p-1.5 hover:bg-blue-50 rounded disabled:opacity-40" title={lang === 'ja' ? '再生成' : 'Regenerate'}>{genLoading === d.rsvpId ? <Loader2 size={14} className="animate-spin text-blue-600" /> : <RefreshCw size={14} className="text-blue-600" />}</button>
                               </>
                             )}
-                            <button onClick={() => deleteDraft(d.id)} className="p-1.5 hover:bg-red-50 rounded"><Trash2 size={14} className="text-red-500" /></button>
+                            <button onClick={() => deleteEmailDraft(d.id)} className="p-1.5 hover:bg-red-50 rounded"><Trash2 size={14} className="text-red-500" /></button>
                           </div>
                         </div>
                         {d.status === 'sent' && d.sentAt && (
@@ -930,9 +945,9 @@ ${schedT}
         )}
       </div>
 
-      {/* Modals */}
+      {/* Modals - borderRadius={T.cr} を渡す */}
       {showMsg && (
-        <Modal onClose={() => setShowMsg(false)}>
+        <Modal onClose={() => setShowMsg(false)} borderRadius={T.cr}>
           <ST title={t('message_modal_title')} sub={t('message_modal_subtitle') + cfg.name} />
           <div className="space-y-4">
             <Field label={t('uploader_name')}>
@@ -947,7 +962,7 @@ ${schedT}
       )}
 
       {showUp && (
-        <Modal onClose={() => setShowUp(false)}>
+        <Modal onClose={() => setShowUp(false)} borderRadius={T.cr}>
           <ST title={t('upload_modal_title')} />
           <div className="space-y-4">
             <Field label={t('uploader_name')}>
@@ -973,7 +988,7 @@ ${schedT}
       )}
 
       {previewDraft && (
-        <Modal onClose={() => setPreviewDraft(null)} wide>
+        <Modal onClose={() => setPreviewDraft(null)} wide borderRadius={T.cr}>
           <div className="mb-6">
             <h3 className="font-semibold text-lg mb-1">{lang === 'ja' ? 'メールプレビュー' : 'Email Preview'}</h3>
             <div className="text-sm text-neutral-500">{previewDraft.name} ({previewDraft.email})</div>
@@ -1019,7 +1034,7 @@ ${schedT}
       )}
 
       {aiResult && (
-        <Modal onClose={() => setAiResult(null)} wide>
+        <Modal onClose={() => setAiResult(null)} wide borderRadius={T.cr}>
           <div className="text-center mb-6">
             <Sparkles size={32} className="mx-auto mb-3" style={{ color: T.c }} />
             <h3 className="text-xl font-semibold">{aiResult.type === 'future' ? (lang === 'ja' ? '10年後の未来予想図' : 'Future Vision (10 years)') : (lang === 'ja' ? '誕生日スピーチ' : 'Birthday Speech')}</h3>
