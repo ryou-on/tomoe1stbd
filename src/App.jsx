@@ -1,9 +1,4 @@
-// src/App.jsx
-// ─────────────────────────────────────────────
-// UI レイヤー — データは useFirestore フックが管理
-// 多言語対応（日本語/英語）
-// ─────────────────────────────────────────────
-
+// src/App.jsx - 完全版（多言語対応）
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Heart, Calendar, MapPin, Camera, Send, Users, Gift, Play,
@@ -19,14 +14,11 @@ import { useFirestore } from './hooks/useFirestore';
 /* ─── 翻訳データ ─── */
 const translations = {
   ja: {
-    // ナビゲーション
     nav_home: 'ホーム',
     nav_rsvp: '参加表明',
     nav_telegram: 'お祝い電報',
     nav_gallery: '写真館',
     nav_media: 'メディア',
-    
-    // ホームページ
     birthday_congrats: '歳 おめでとう',
     rsvp_button: '参加を表明する',
     send_message: 'お祝いメッセージを送る',
@@ -41,11 +33,8 @@ const translations = {
     gift_list: 'ギフトリスト',
     gift_desc: 'Amazon欲しいものリストより',
     view_list: 'リストを見る',
-    
-    // RSVPフォーム
     rsvp_title: '参加表明',
     rsvp_closed: '受付は終了しました',
-    name_label: 'お名前',
     name_required: 'お名前 *',
     name_placeholder: '例: 山田太郎',
     email_label: 'メールアドレス',
@@ -60,43 +49,30 @@ const translations = {
     ai_refine: 'AI校正',
     ai_tip: 'AIが文章を整えてくれます',
     submit: '回答を送信',
-    
-    // 電報ページ
     telegrams_title: '皆様からのメッセージ',
     send_telegram: 'メッセージを送る',
     waiting_messages: 'メッセージを待っています...',
-    
-    // ギャラリー
     gallery_title: '思い出の写真館',
     slideshow: 'スライドショー',
     upload_photo: '写真を投稿',
     no_photos: 'まだ写真がありません',
-    
-    // メディアページ
     media_title: 'メディア',
     media_subtitle: 'Tomoeちゃんの思い出と楽曲',
     songs: '楽曲',
     scores: '楽譜',
     timeline: '成長の記録',
     back_to_top: '← トップへ戻る',
-    
-    // モーダル
     message_modal_title: 'お祝いメッセージ',
     message_modal_subtitle: 'ちゃんへ心を込めて',
     upload_modal_title: '写真を投稿',
     uploader_name: '投稿者のお名前',
     upload_button: 'アップロード',
     max_photos: '最大10枚',
-    
-    // 管理画面
     admin_login: '管理画面',
     admin_id: 'Admin ID',
     password: 'Password',
     login: 'ログイン',
-    logout: 'ログアウト',
     admin_panel: '管理パネル',
-    
-    // 通知
     login_success: 'ログインしました',
     login_failed: 'IDまたはパスワードが違います',
     rsvp_success: '登録ありがとうございます！',
@@ -107,25 +83,18 @@ const translations = {
     ai_failed: 'AI校正に失敗',
     copied: 'コピーしました',
     url_copied: 'URLをコピー',
-    
-    // フッター
     admin_login_link: '管理者ログイン',
     share_site: 'サイトをシェア',
     birthday_party: '歳 生誕祭 🎂',
-    
-    // その他
     loading: '読み込み中...',
     creating_email: 'AIメール作成中...',
   },
   en: {
-    // Navigation
     nav_home: 'Home',
     nav_rsvp: 'RSVP',
     nav_telegram: 'Messages',
     nav_gallery: 'Gallery',
     nav_media: 'Media',
-    
-    // Home page
     birthday_congrats: 'years old',
     rsvp_button: 'RSVP Now',
     send_message: 'Send Message',
@@ -133,18 +102,15 @@ const translations = {
     updates: 'Updates',
     schedule: 'Schedule',
     schedule_note: 'This is an open house format. You can arrive and leave at your convenience.',
-    schedule_caution: '* Schedule may change due to the birthday child\'s condition. Thank you for understanding.',
+    schedule_caution: '* Schedule may change due to the birthday child\'s condition.',
     venue: 'Venue',
     venue_locked: 'Venue details will be shown after RSVP',
     view_map: 'View on Map',
     gift_list: 'Gift Registry',
     gift_desc: 'Amazon Wishlist',
     view_list: 'View List',
-    
-    // RSVP form
     rsvp_title: 'RSVP',
     rsvp_closed: 'RSVP is now closed',
-    name_label: 'Name',
     name_required: 'Name *',
     name_placeholder: 'e.g. John Smith',
     email_label: 'Email',
@@ -159,43 +125,30 @@ const translations = {
     ai_refine: 'AI Polish',
     ai_tip: 'AI will refine your message',
     submit: 'Submit',
-    
-    // Telegrams page
     telegrams_title: 'Messages from Guests',
     send_telegram: 'Send Message',
     waiting_messages: 'Waiting for messages...',
-    
-    // Gallery
     gallery_title: 'Photo Gallery',
     slideshow: 'Slideshow',
     upload_photo: 'Upload Photo',
     no_photos: 'No photos yet',
-    
-    // Media page
     media_title: 'Media',
     media_subtitle: 'Memories and Songs',
     songs: 'Songs',
     scores: 'Sheet Music',
     timeline: 'Growth Timeline',
     back_to_top: '← Back to Top',
-    
-    // Modals
     message_modal_title: 'Send Message',
     message_modal_subtitle: 'With love',
     upload_modal_title: 'Upload Photos',
     uploader_name: 'Your Name',
     upload_button: 'Upload',
     max_photos: 'Max 10 photos',
-    
-    // Admin
     admin_login: 'Admin Login',
     admin_id: 'Admin ID',
     password: 'Password',
     login: 'Login',
-    logout: 'Logout',
     admin_panel: 'Admin Panel',
-    
-    // Notifications
     login_success: 'Logged in successfully',
     login_failed: 'Invalid ID or password',
     rsvp_success: 'Thank you for your RSVP!',
@@ -206,13 +159,9 @@ const translations = {
     ai_failed: 'AI refinement failed',
     copied: 'Copied to clipboard',
     url_copied: 'URL copied',
-    
-    // Footer
     admin_login_link: 'Admin Login',
     share_site: 'Share Site',
     birthday_party: 'Birthday Party 🎂',
-    
-    // Other
     loading: 'Loading...',
     creating_email: 'Creating AI email...',
   }
@@ -242,7 +191,6 @@ const Field = ({ label, children }) => (
   <div><div className="text-[11px] font-semibold text-neutral-500 mb-1 select-none">{label}</div>{children}</div>
 );
 
-/* ════════════════════════════════════════════ */
 export default function App() {
   // ── 言語設定 ──
   const [lang, setLang] = useState(() => localStorage.getItem('lang') || 'ja');
@@ -254,7 +202,6 @@ export default function App() {
   
   const toggleLang = () => setLang(l => l === 'ja' ? 'en' : 'ja');
 
-  // ── Firestore フック（全データ） ──
   const store = useFirestore();
   const {
     cfg, rsvps, msgs, photos, sched, news, emailDrafts, ready,
@@ -267,7 +214,6 @@ export default function App() {
 
   const deleteMessage = store.deleteMessage;
 
-  // ── ローカル UI ステート ──
   const [page, setPage]       = useState('home');
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [toast, setToast]     = useState(null);
@@ -282,7 +228,6 @@ export default function App() {
   const [genLoading, setGenLoading] = useState(null);
   const [previewDraft, setPreviewDraft] = useState(null);
 
-  // Forms
   const [rName, setRName]   = useState('');
   const [rEmail, setREmail] = useState('');
   const [rAtt, setRAtt]     = useState('yes');
@@ -292,7 +237,6 @@ export default function App() {
   const [uName, setUName]   = useState('');
   const [uImgs, setUImgs]   = useState([]);
 
-  // Modals
   const [showMsg, setShowMsg] = useState(false);
   const [showUp, setShowUp]   = useState(false);
   const [slide, setSlide]     = useState(-1);
@@ -300,7 +244,6 @@ export default function App() {
   const [aiResult, setAiResult]     = useState(null);
   const [aiLoading, setAiLoading]   = useState(false);
 
-  // Schedule edit
   const [showSchedForm, setShowSchedForm]   = useState(false);
   const [newSchedTime, setNewSchedTime]     = useState('');
   const [newSchedTitle, setNewSchedTitle]   = useState('');
@@ -308,7 +251,6 @@ export default function App() {
   const [editSchedTime, setEditSchedTime]   = useState('');
   const [editSchedTitle, setEditSchedTitle] = useState('');
 
-  // News form
   const [showNewsForm, setShowNewsForm]     = useState(false);
   const [newNewsTitle, setNewNewsTitle]     = useState('');
   const [newNewsContent, setNewNewsContent] = useState('');
@@ -322,7 +264,6 @@ export default function App() {
   const notify = useCallback(m => setToast(m), []);
   const sc = (c) => updateConfig(c);
 
-  /* ─ Theme ─ */
   const T = useMemo(() => {
     const s = cfg.style;
     return {
@@ -366,13 +307,11 @@ export default function App() {
   const btnS = { backgroundColor: T.c, borderRadius: T.r, color: '#fff' };
   const iCls = "w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200/60 text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-200 appearance-none";
 
-  // IME対応のイベントハンドラ
   const imeHandlers = {
     onCompositionStart: () => setIsComposing(true),
     onCompositionEnd: () => setIsComposing(false),
   };
 
-  /* ─── Claude API ─── */
   const CLAUDE_KEY = import.meta.env.VITE_CLAUDE_API_KEY;
   const callAI = async (prompt) => {
     const headers = { "Content-Type": "application/json" };
@@ -451,7 +390,6 @@ ${schedT}
     catch { notify('AI生成に失敗'); } finally { setAiLoading(false); }
   };
 
-  /* ─── Actions ─── */
   const go = (p) => { setPage(p); setMenuOpen(false); window.scrollTo(0, 0); };
 
   const doLogin = () => {
@@ -484,16 +422,13 @@ ${schedT}
   const doTopImg = async e => { const f = e.target.files[0]; if (!f) return; const d = await compress(f, 0.5); const url = await uploadImage(d, 'topImage/hero.jpg'); sc({ topImg: url }); notify('更新'); };
   const doLike = (id) => { const p = photos.find(x => x.id === id); if (p) likePhoto(id, p.likes); };
 
-  // Schedule
   const doAddSched = async () => { if (!newSchedTime || !newSchedTitle || isComposing) return; await addSchedule(newSchedTime, newSchedTitle); setNewSchedTime(''); setNewSchedTitle(''); setShowSchedForm(false); notify('追加'); };
   const startEditSched = (s) => { setEditSchedId(s.id); setEditSchedTime(s.time); setEditSchedTitle(s.title); };
   const saveEditSched = async () => { if (!editSchedTime || !editSchedTitle || isComposing) return; await updateSchedule(editSchedId, editSchedTime, editSchedTitle); setEditSchedId(null); notify('更新'); };
   const cancelEditSched = () => setEditSchedId(null);
 
-  // News
   const doAddNews = async () => { if (!newNewsTitle || isComposing) return; await addNews(newNewsTitle, newNewsContent); setNewNewsTitle(''); setNewNewsContent(''); setShowNewsForm(false); notify('追加'); };
 
-  // Export / Import
   const doExport = () => {
     const data = exportAll();
     const b = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -507,7 +442,7 @@ ${schedT}
   };
 
   const doBulkMail = () => { const em = rsvps.filter(g => selGuests.includes(g.id) && g.email).map(g => g.email).join(','); if (em) window.location.href = `mailto:${em}?subject=${encodeURIComponent(cfg.name + 'の誕生日会')}`; };
-  const copyTxt = t => { navigator.clipboard?.writeText(t); notify(t('copied')); };
+  const copyTxt = txt => { navigator.clipboard?.writeText(txt); notify(t('copied')); };
 
   const draftCt = emailDrafts.filter(d => d.status === 'draft').length;
   const sentCt  = emailDrafts.filter(d => d.status === 'sent').length;
@@ -532,7 +467,6 @@ ${schedT}
 
   const isGuestPage = ['home', 'rsvp', 'telegram', 'gallery', 'media'].includes(page);
 
-  // ── ローディング画面 ──
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
@@ -553,7 +487,6 @@ ${schedT}
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[50] bg-white shadow-lg rounded-full px-4 py-2 flex items-center gap-2 text-xs font-semibold border"><Loader2 size={14} className="animate-spin" style={{ color: T.c }} /><span className="text-neutral-600">{t('creating_email')}</span></div>
       )}
 
-      {/* PC タブナビ + 言語切り替え */}
       {isGuestPage && (
         <nav className={`hidden md:block fixed top-0 inset-x-0 z-[80] bg-white border-b border-neutral-100 shadow-sm ${cfg.announcement ? 'mt-8' : ''}`}>
           <div className="max-w-4xl mx-auto flex items-center justify-between px-6 h-14">
@@ -569,7 +502,6 @@ ${schedT}
         </nav>
       )}
 
-      {/* モバイル ハンバーガー */}
       {isGuestPage && (
         <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden fixed top-3 right-3 z-[100] w-10 h-10 bg-white/90 backdrop-blur-lg rounded-full shadow-lg flex items-center justify-center border border-neutral-200">
           {menuOpen ? <X size={18} className="text-neutral-700" /> : <Menu size={18} className="text-neutral-700" />}
@@ -594,320 +526,10 @@ ${schedT}
         </div>
       )}
 
-      {/* 固定RSVPボタン */}
       {!closed && isGuestPage && page !== 'rsvp' && (
         <div className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[40]"><button onClick={() => go('rsvp')} className="px-6 py-3 text-sm font-semibold shadow-2xl flex items-center gap-2 active:scale-95 transition-transform" style={btnS}><Send size={14} /> {t('rsvp_button')}</button></div>
       )}
 
       <div className={`${cfg.announcement ? 'pt-8' : ''} ${isGuestPage ? 'md:pt-14' : ''} pb-24 md:pb-8`}>
 
-        {/* ═══ HOME ═══ */}
-        {page === 'home' && (
-          <div className="fin">
-            <div className="relative min-h-[92vh] md:min-h-[calc(100vh-3.5rem)] flex items-center justify-center overflow-hidden bg-white">
-              {cfg.topImg ? (<div className="absolute inset-0"><img src={cfg.topImg} className="w-full h-full object-cover opacity-25 scale-105 blur-[1px]" alt="" /><div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/30 to-neutral-50" /></div>) : <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]"><Heart size={480} style={{ color: T.c }} /></div>}
-              <div className="relative z-10 max-w-xl px-6 text-center">
-                <p className="tracking-[.5em] text-[11px] uppercase mb-5 font-medium" style={{ color: T.c + 'aa' }}>{cfg.heroSub}</p>
-                <h1 className="text-5xl md:text-8xl font-light text-neutral-900 mb-3 tracking-tight leading-none">{cfg.name}</h1>
-                <p className="text-2xl md:text-4xl font-light mb-3 tracking-tight" style={{ color: T.c }}>{age} {t('birthday_congrats')}</p>
-                <p className="text-sm md:text-base text-neutral-500 mb-10 tracking-wide">{new Date(cfg.eventDate).toLocaleDateString(lang === 'ja' ? 'ja-JP' : 'en-US', { year: "numeric", month: "long", day: "numeric" })}</p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <button onClick={() => go('rsvp')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>{t('rsvp_button')}</button>
-                  <button onClick={() => setShowMsg(true)} className="px-7 py-3.5 text-sm font-semibold bg-white border border-neutral-200 shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style={{ borderRadius: T.r, color: T.c }}><MessageSquare size={15} /> {t('send_message')}</button>
-                </div>
-              </div>
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-neutral-400 sb"><span className="text-[10px] tracking-[.3em] uppercase font-medium">{t('scroll')}</span><ChevronDown size={15} /></div>
-            </div>
-
-            {news.length > 0 && (<section className="max-w-3xl mx-auto px-5 py-16"><ST title={t('updates')} sub="Updates" /><div className="space-y-3">{news.sort((a, b) => new Date(b.ts) - new Date(a.ts)).map(u => (<div key={u.id} className="bg-white p-5 shadow-sm border border-neutral-100 flex items-start gap-3.5" style={{ borderRadius: T.cr }}><div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: T.c + '10', color: T.c }}><Newspaper size={16} /></div><div><h4 className="font-semibold text-neutral-900 text-sm mb-0.5">{u.title}</h4><p className="text-[13px] text-neutral-500 leading-relaxed">{u.content}</p><time className="text-[10px] text-neutral-300 mt-1 block">{new Date(u.ts).toLocaleDateString(lang === 'ja' ? 'ja-JP' : 'en-US')}</time></div></div>))}</div></section>)}
-
-            {sched.length > 0 && (<section className="max-w-3xl mx-auto px-5 py-16"><ST title={t('schedule')} sub="Schedule" /><div className="bg-white p-5 border border-neutral-100 shadow-sm mb-8 text-[13px] text-neutral-600 leading-relaxed" style={{ borderRadius: T.cr }}><p className="mb-2">{t('schedule_note')}</p><p className="text-[11px] text-neutral-400">{t('schedule_caution')}</p></div><div className="relative ml-3"><div className="absolute left-0 top-1 bottom-1 w-px" style={{ backgroundColor: T.c + '20' }} /><div className="space-y-6">{[...sched].sort((a, b) => (a.time || '').localeCompare(b.time || '')).map(s => (<div key={s.id} className="relative pl-7"><div className="absolute left-0 top-1.5 w-2 h-2 rounded-full -translate-x-[calc(50%-.5px)] ring-[3px] ring-neutral-50" style={{ backgroundColor: T.c }} /><div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-5"><time className="text-lg font-semibold tabular-nums" style={{ color: T.c }}>{s.time}</time><span className="text-neutral-700 font-medium text-[15px]">{s.title}</span></div></div>))}</div></div></section>)}
-
-            <section className="max-w-3xl mx-auto px-5 py-16">
-              <div className={`grid grid-cols-1 ${hasRsvped || isAdmin ? 'md:grid-cols-2' : ''} gap-5`}>
-                {(hasRsvped || isAdmin) ? (
-                  <div className="bg-white shadow-sm border border-neutral-100 overflow-hidden" style={{ borderRadius: T.cr }}><div className="p-6 text-center"><div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: T.c + '08', color: T.c }}><MapPin size={22} /></div><h3 className="text-base font-semibold text-neutral-900 mb-1">{t('venue')}</h3><p className="text-neutral-600 font-medium text-sm">{cfg.venue}</p><p className="text-neutral-400 text-xs mb-3">{cfg.address}</p><button onClick={() => window.open(mapUrl)} className="text-xs font-semibold hover:underline flex items-center gap-1 mx-auto" style={{ color: T.c }}>{t('view_map')} <ExternalLink size={11} /></button></div><iframe src={mapEmbed} className="w-full h-48 border-0 border-t border-neutral-100" allowFullScreen loading="lazy" title="map" /></div>
-                ) : (
-                  <div className="bg-white p-6 shadow-sm border border-neutral-100 text-center flex flex-col justify-center" style={{ borderRadius: T.cr }}><div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: T.c + '08', color: T.c }}><MapPin size={22} /></div><h3 className="text-base font-semibold text-neutral-900 mb-1">{t('venue')}</h3><p className="text-neutral-500 text-xs mb-4">{t('venue_locked')}</p><button onClick={() => go('rsvp')} className="inline-flex items-center gap-1.5 px-5 py-2.5 text-white text-xs font-semibold shadow-md mx-auto active:scale-95 transition-transform" style={btnS}><Send size={12} /> {t('rsvp_button')}</button></div>
-                )}
-                <div className="bg-white p-6 shadow-sm border border-neutral-100 text-center flex flex-col justify-center" style={{ borderRadius: T.cr }}><div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: T.c + '08', color: T.c }}><Gift size={22} /></div><h3 className="text-base font-semibold text-neutral-900 mb-1">{t('gift_list')}</h3><p className="text-xs text-neutral-500 mb-4">{t('gift_desc')}</p><a href={cfg.amazonUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-5 py-2.5 text-white text-xs font-semibold shadow-md mx-auto active:scale-95 transition-transform" style={btnS}><ExternalLink size={12} /> {t('view_list')}</a></div>
-              </div>
-            </section>
-          </div>
-        )}
-
-        {/* ═══ RSVP ═══ */}
-        {page === 'rsvp' && (
-          <div className="max-w-md mx-auto px-5 py-16 fin">
-            <ST title={t('rsvp_title')} sub="RSVP" />
-            <div className="bg-white p-6 shadow-lg border border-neutral-100" style={{ borderRadius: T.cr }}>
-              {closed ? (
-                <div className="text-center py-10">
-                  <AlertCircle size={36} className="mx-auto text-neutral-300 mb-3" />
-                  <h3 className="text-lg font-semibold text-neutral-700">{t('rsvp_closed')}</h3>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <Field label={t('name_required')}>
-                    <input 
-                      key="rsvp-name"
-                      className={iCls} 
-                      placeholder={t('name_placeholder')} 
-                      value={rName} 
-                      onChange={e => setRName(e.target.value)}
-                      {...imeHandlers}
-                      enterKeyHint="done"
-                    />
-                  </Field>
-                  
-                  <Field label={<>{t('email_label')} {cfg.autoReplyEnabled && <span className="text-rose-400 font-normal">{t('email_thank_you')}</span>}</>}>
-                    <input 
-                      key="rsvp-email"
-                      type="email" 
-                      className={iCls} 
-                      placeholder={t('email_placeholder')} 
-                      value={rEmail} 
-                      onChange={e => setREmail(e.target.value)}
-                      {...imeHandlers}
-                      enterKeyHint="done"
-                    />
-                    {cfg.autoReplyEnabled && <p className="text-[10px] text-neutral-400 mt-1">{t('email_ai_note')}</p>}
-                  </Field>
-                  
-                  <Field label={t('attendance')}>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['yes', 'no'].map(v => (
-                        <button 
-                          key={v} 
-                          onClick={() => setRAtt(v)} 
-                          className={`py-2.5 text-sm font-semibold border-2 rounded-lg transition-all ${rAtt === v ? 'text-white shadow-md' : 'bg-white text-neutral-400 border-neutral-100'}`} 
-                          style={rAtt === v ? { backgroundColor: T.c, borderColor: T.c } : {}}
-                        >
-                          {t(v === 'yes' ? 'attend_yes' : 'attend_no')}
-                        </button>
-                      ))}
-                    </div>
-                  </Field>
-                  
-                  <Field label={
-                    <span className="flex items-center gap-2">
-                      {t('message_optional')}
-                      <Tip text={t('ai_tip')} />
-                      {rMsg && (
-                        <button 
-                          onClick={refineMsg} 
-                          disabled={aiRefining} 
-                          className="text-[10px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 text-purple-600 hover:bg-purple-100 disabled:opacity-40"
-                        >
-                          {aiRefining ? <Loader2 size={10} className="animate-spin" /> : <Wand2 size={10} />} {t('ai_refine')}
-                        </button>
-                      )}
-                    </span>
-                  }>
-                    <textarea 
-                      key="rsvp-msg"
-                      className={iCls + " h-24 resize-none"} 
-                      placeholder={t('message_placeholder')} 
-                      value={rMsg} 
-                      onChange={e => setRMsg(e.target.value)}
-                      {...imeHandlers}
-                    />
-                  </Field>
-                  
-                  <button 
-                    onClick={doRsvp} 
-                    disabled={!rName || isComposing} 
-                    className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98] transition-all" 
-                    style={btnS}
-                  >
-                    {t('submit')}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ═══ TELEGRAMS ═══ */}
-        {page === 'telegram' && (<div className="max-w-3xl mx-auto px-5 py-16 fin"><ST title={t('telegrams_title')} sub="Telegrams" /><div className="flex justify-center mb-8"><button onClick={() => setShowMsg(true)} className="px-5 py-2.5 text-xs font-semibold flex items-center gap-1.5 shadow-md active:scale-95" style={btnS}><Plus size={13} /> {t('send_telegram')}</button></div>{msgs.length === 0 ? <p className="text-center text-neutral-300 py-14 italic text-sm">{t('waiting_messages')}</p> : (<div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">{[...msgs].sort((a, b) => new Date(b.ts) - new Date(a.ts)).map(m => (<div key={m.id} className="break-inside-avoid bg-white p-5 shadow-sm border border-neutral-100 relative group" style={{ borderRadius: T.cr }}><Quote className="absolute top-3 right-3 opacity-[.06]" size={28} style={{ color: T.c }} /><p className="text-neutral-600 leading-relaxed mb-3 text-[13px] italic">"{m.text}"</p><div className="flex items-center justify-between border-t border-neutral-50 pt-2.5"><span className="text-xs font-semibold" style={{ color: T.c }}>{m.name} {lang === 'ja' ? '様' : ''}</span>{isAdmin && <button onClick={() => deleteMessage(m.id)} className="text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 size={12} /></button>}</div></div>))}</div>)}</div>)}
-
-        {/* ═══ GALLERY ═══ */}
-        {page === 'gallery' && (<div className="max-w-4xl mx-auto px-5 py-16 fin"><ST title={t('gallery_title')} sub="Gallery" /><div className="flex justify-center gap-3 mb-8"><button onClick={() => slideItems.length > 0 && setSlide(0)} className="px-5 py-2.5 bg-white border border-neutral-200 text-neutral-600 text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95" style={{ borderRadius: T.r }}><Play size={13} /> {t('slideshow')}</button><button onClick={() => setShowUp(true)} className="px-5 py-2.5 text-xs font-semibold flex items-center gap-1.5 shadow-md active:scale-95" style={btnS}><Plus size={13} /> {t('upload_photo')}</button></div>{photos.length === 0 ? <p className="text-center text-neutral-300 py-14 italic text-sm">{t('no_photos')}</p> : (<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">{[...photos].sort((a, b) => new Date(b.ts) - new Date(a.ts)).map(p => (<div key={p.id} className="aspect-square bg-white p-1 shadow-sm border border-neutral-100 overflow-hidden group relative" style={{ borderRadius: T.cr }}><img src={p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" style={{ borderRadius: `calc(${T.cr} - 4px)` }} /><div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3"><span className="text-white text-[10px] font-medium mb-1.5 truncate">by {p.uploader}</span><div className="flex justify-between items-center"><button onClick={() => doLike(p.id)} className="text-rose-400 flex items-center gap-1 text-xs font-semibold"><Heart size={12} fill={p.likes > 0 ? 'currentColor' : 'none'} /> {p.likes || 0}</button>{isAdmin && <button onClick={() => deletePhoto(p.id)} className="text-white/50 hover:text-red-400"><Trash2 size={12} /></button>}</div></div></div>))}</div>)}</div>)}
-
-        {/* ═══ MEDIA ═══ */}
-        {page === 'media' && (
-          <div className="min-h-screen bg-gradient-to-br from-rose-50 via-amber-50 to-pink-50 py-16 px-5">
-            <div className="max-w-5xl mx-auto">
-              <div className="text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-4" style={{ color: cfg.color || '#e11d48' }}>{t('media_title')}</h1>
-                <p className="text-sm text-neutral-500">{t('media_subtitle')}</p>
-              </div>
-
-              {cfg.media?.songs && cfg.media.songs.length > 0 && (
-                <div className="mb-16">
-                  <h2 className="text-2xl font-light mb-6 text-neutral-800">{t('songs')}</h2>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {cfg.media.songs.map((song, i) => (
-                      <div key={i} className="bg-white rounded-xl shadow-md p-6">
-                        <h3 className="text-lg font-medium mb-4 text-neutral-800">{song.title}</h3>
-                        {song.type === 'suno' && (
-                          <iframe
-                            src={song.url.replace('/song/', '/embed/')}
-                            className="w-full h-48 rounded-lg"
-                            frameBorder="0"
-                            allow="autoplay; clipboard-write; encrypted-media"
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {cfg.media?.scores && cfg.media.scores.length > 0 && (
-                <div className="mb-16">
-                  <h2 className="text-2xl font-light mb-6 text-neutral-800">{t('scores')}</h2>
-                  <div className="grid gap-6">
-                    {cfg.media.scores.map((score, i) => (
-                      <div key={i} className="bg-white rounded-xl shadow-md p-6">
-                        <h3 className="text-lg font-medium mb-4 text-neutral-800">{score.title}</h3>
-                        <iframe
-                          src={score.url}
-                          className="w-full h-[600px] rounded-lg"
-                          frameBorder="0"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {cfg.media?.timeline && cfg.media.timeline.length > 0 && (
-                <div className="mb-16">
-                  <h2 className="text-2xl font-light mb-6 text-neutral-800">{t('timeline')}</h2>
-                  <div className="space-y-8">
-                    {[...cfg.media.timeline].sort((a, b) => new Date(b.date) - new Date(a.date)).map((event, i) => (
-                      <div key={i} className="flex gap-6">
-                        <div className="flex-shrink-0 w-24 text-right">
-                          <div className="text-sm font-medium text-neutral-600">
-                            {new Date(event.date).toLocaleDateString(lang === 'ja' ? 'ja-JP' : 'en-US', { month: 'short', day: 'numeric' })}
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0 pt-1">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cfg.color || '#e11d48' }} />
-                        </div>
-                        <div className="flex-1 pb-8 border-b border-neutral-100">
-                          {event.imageUrl && (
-                            <img
-                              src={event.imageUrl}
-                              alt={event.title}
-                              className="w-full max-w-md h-48 object-cover rounded-lg mb-4 shadow-md"
-                            />
-                          )}
-                          <h3 className="text-lg font-medium mb-2 text-neutral-800">{event.title}</h3>
-                          <p className="text-sm text-neutral-600">{event.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="text-center mt-12">
-                <button
-                  onClick={() => go('home')}
-                  className="px-6 py-3 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all rounded-full"
-                  style={{ backgroundColor: cfg.color || '#e11d48', color: 'white' }}
-                >
-                  {t('back_to_top')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ ADMIN（管理画面は日本語のまま） ═══ */}
-        {page === 'admin' && (<div className="max-w-3xl mx-auto px-5 py-10 fin">{!isAdmin ? (<div className="max-w-xs mx-auto pt-8"><ST title={t('admin_login')} sub="CMS Login" /><div className="bg-white p-7 shadow-lg border border-neutral-100" style={{ borderRadius: T.cr }}><div className="w-12 h-12 rounded-xl bg-neutral-50 flex items-center justify-center mx-auto mb-5"><Lock size={20} className="text-neutral-400" /></div><div className="space-y-3"><input className={iCls} placeholder={t('admin_id')} value={loginId} onChange={e => setLoginId(e.target.value)} {...imeHandlers} /><input className={iCls} type="password" placeholder={t('password')} value={loginPw} onChange={e => setLoginPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && !isComposing && doLogin()} {...imeHandlers} /><button onClick={doLogin} disabled={isComposing} className="w-full py-3 text-sm font-semibold shadow-lg active:scale-[0.98] disabled:opacity-40" style={btnS}>{t('login')}</button></div></div><button onClick={() => go('home')} className="text-xs text-neutral-400 mt-4 mx-auto block hover:text-neutral-600">{t('back_to_top')}</button></div>) : (
-          // 管理画面の内容は省略（前のコードと同じ）
-          <div className="text-center py-20 text-neutral-400">管理画面（前のコードと同じ）</div>
-        )}</div>)}
-      </div>
-
-      {/* Footer */}
-      {isGuestPage && (<footer className="bg-white border-t border-neutral-100 py-8 px-6 text-center"><p className="text-xs text-neutral-300 mb-3">{cfg.name}{lang === 'ja' ? 'の' : '\'s'}{age}{t('birthday_party')}</p><button onClick={() => go('admin')} className="text-[10px] text-neutral-300 hover:text-neutral-500 flex items-center gap-1 mx-auto"><Lock size={10} /> {t('admin_login_link')}</button></footer>)}
-
-      {/* Modals */}
-      {showUp && (
-        <Modal onClose={() => { setShowUp(false); setUImgs([]); setUName(''); }}>
-          <h3 className="text-lg font-semibold text-neutral-900 mb-4">{t('upload_modal_title')}</h3>
-          <div className="space-y-4">
-            <div onClick={() => fileRef.current?.click()} className="w-full aspect-[16/10] bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center cursor-pointer overflow-hidden rounded-lg">
-              {uImgs.length ? (
-                <div className="grid grid-cols-3 gap-1 p-2 w-full h-full overflow-y-auto">
-                  {uImgs.map((p, i) => <img key={i} src={p} className="w-full h-16 object-cover rounded" alt="" />)}
-                </div>
-              ) : (
-                <div className="text-neutral-300 flex flex-col items-center gap-1.5">
-                  <Upload size={28} />
-                  <span className="text-[11px]">{t('max_photos')}</span>
-                </div>
-              )}
-              <input ref={fileRef} type="file" accept="image/*" multiple onChange={doFiles} className="hidden" />
-            </div>
-            <input 
-              className={iCls + " text-center font-medium"} 
-              placeholder={t('uploader_name')} 
-              value={uName} 
-              onChange={e => setUName(e.target.value)}
-              {...imeHandlers}
-              enterKeyHint="done"
-            />
-            <button 
-              onClick={doUpload} 
-              disabled={!uImgs.length || !uName || isComposing} 
-              className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98]" 
-              style={btnS}
-            >
-              {t('upload_button')}
-            </button>
-          </div>
-        </Modal>
-      )}
-
-      {showMsg && (
-        <Modal onClose={() => setShowMsg(false)}>
-          <h3 className="text-lg font-semibold text-neutral-900 mb-0.5">{t('message_modal_title')}</h3>
-          <p className="text-[11px] text-neutral-400 mb-5">{cfg.name}{t('message_modal_subtitle')}</p>
-          <div className="space-y-4">
-            <input 
-              className={iCls + " font-medium"} 
-              placeholder={t('uploader_name')} 
-              value={mName} 
-              onChange={e => setMName(e.target.value)}
-              {...imeHandlers}
-              enterKeyHint="done"
-            />
-            <textarea 
-              className={iCls + " h-28 resize-none"} 
-              placeholder={t('message_placeholder')} 
-              value={mText} 
-              onChange={e => setMText(e.target.value)}
-              {...imeHandlers}
-            />
-            <button 
-              onClick={doMsg} 
-              disabled={!mName || !mText || isComposing} 
-              className="w-full py-3 text-sm font-semibold shadow-lg disabled:opacity-40 active:scale-[0.98]" 
-              style={btnS}
-            >
-              {t('submit')}
-            </button>
-          </div>
-        </Modal>
-      )}
-
-      {/* 残りのモーダルとスライドショーは省略（コードが長すぎるため） */}
-      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
-    </div>
-  );
-}
+{/* 続きは次のメッセージで送ります */}
