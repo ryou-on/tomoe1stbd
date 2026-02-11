@@ -439,8 +439,23 @@ ${schedT}
 
       <div className={`${cfg.announcement ? 'pt-8' : ''} ${isGuestPage ? 'md:pt-14' : ''} pb-24 md:pb-8`}>
         {/* HOME */}
-        {page === 'home' && (
-          <>
+      {page === 'home' && (
+          <div className="fin">
+            <div className="relative min-h-[92vh] md:min-h-[calc(100vh-3.5rem)] flex items-center justify-center overflow-hidden bg-white">
+              {cfg.topImg ? (<div className="absolute inset-0"><img src={cfg.topImg} className="w-full h-full object-cover opacity-25 scale-105 blur-[1px]" alt="" /><div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/30 to-neutral-50" /></div>) : <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]"><Heart size={480} style={{ color: T.c }} /></div>}
+              <div className="relative z-10 max-w-xl px-6 text-center">
+                <p className="tracking-[.5em] text-[11px] uppercase mb-5 font-medium" style={{ color: T.c + 'aa' }}>{cfg.heroSub}</p>
+                <h1 className="text-5xl md:text-8xl font-light text-neutral-900 mb-3 tracking-tight leading-none" style={lang === 'en' ? { textTransform: 'uppercase' } : {}}>{cfg.name}</h1>
+                <p className="text-2xl md:text-4xl font-light mb-3 tracking-tight" style={{ color: T.c }}>{age} {t('birthday_congrats')}</p>
+                <p className="text-sm md:text-base text-neutral-500 mb-10 tracking-wide">{new Date(cfg.eventDate).toLocaleDateString(lang === 'ja' ? 'ja-JP' : 'en-US', { year: "numeric", month: "long", day: "numeric" })}</p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button onClick={() => go('rsvp')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>{t('rsvp_button')}</button>
+                  <button onClick={() => setShowMsg(true)} className="px-7 py-3.5 text-sm font-semibold bg-white border border-neutral-200 shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style={{ borderRadius: T.r, color: T.c }}><MessageSquare size={15} /> {t('send_message')}</button>
+                </div>
+              </div>
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-neutral-400 sb"><span className="text-[10px] tracking-[.3em] uppercase font-medium">{t('scroll')}</span><ChevronDown size={15} /></div>
+            </div>
+
             {/* お知らせ */}
             <div className="max-w-3xl mx-auto px-6 py-16 md:py-24">
               <ST title={t('updates')} />
