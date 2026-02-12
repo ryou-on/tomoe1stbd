@@ -174,6 +174,11 @@ export default function App() {
 
   const [selGuests, setSelGuests] = useState([]);
 
+  const [editPhotoId, setEditPhotoId] = useState(null);
+  const [editPhotoName, setEditPhotoName] = useState('');
+  const [adminUpImgs, setAdminUpImgs] = useState([]);
+  const [adminUpName, setAdminUpName] = useState('');
+
   const fileRef = useRef(null);
   const topRef = useRef(null);
   const impRef = useRef(null);
@@ -340,6 +345,19 @@ ${schedT}
   const doLike = (id) => { const p = photos.find(x => x.id === id); if (p) likePhoto(id, p.likes); };
 
   const doAddSched = async () => { if (!newSchedTime || !newSchedTitle || isComposing) return; await addSchedule(newSchedTime, newSchedTitle); setNewSchedTime(''); setNewSchedTitle(''); setShowSchedForm(false); notify('追加'); };
+
+  const doAdminUpFiles = async e => { const f = Array.from(e.target.files).slice(0, 10); if (!f.length) return; setAdminUpImgs(await Promise.all(f.map(x => compress(x)))); };
+  const doAdminUpload = async () => {
+    if (!adminUpImgs.length || !adminUpName || isComposing) return;
+    await submitPhotos(adminUpName, adminUpImgs);
+    setAdminUpName(''); setAdminUpImgs([]); notify(lang === 'ja' ? '写真を追加しました' : 'Photos added');
+  };
+  const startEditPhoto = (p) => { setEditPhotoId(p.id); setEditPhotoName(p.name || ''); };
+  const saveEditPhoto = async () => {
+    if (!editPhotoName || !editPhotoId) return;
+    if (store.updatePhoto) { await store.updatePhoto(editPhotoId, { name: editPhotoName }); }
+    setEditPhotoId(null); setEditPhotoName(''); notify(lang === 'ja' ? '更新しました' : 'Updated');
+  };
   const startEditSched = (s) => { setEditSchedId(s.id); setEditSchedTime(s.time); setEditSchedTitle(s.title); };
   const saveEditSched = async () => { if (!editSchedTime || !editSchedTitle || isComposing) return; await updateSchedule(editSchedId, editSchedTime, editSchedTitle); setEditSchedId(null); notify('更新'); };
   const cancelEditSched = () => setEditSchedId(null);
@@ -899,11 +917,35 @@ ${schedT}
             {aTab === 'photos' && (
               <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6">
                 <h3 className="font-semibold mb-6 flex items-center gap-2"><Camera size={16} /> {lang === 'ja' ? '写真管理' : 'Photos'} ({photos.length})</h3>
+
+                {/* 管理者アップロード */}
+                <div className="mb-6 p-4 bg-neutral-50 rounded-xl border border-neutral-200">
+                  <h4 className="text-sm font-semibold text-neutral-700 mb-3 flex items-center gap-2"><Upload size={14} /> {lang === 'ja' ? '写真を追加' : 'Add Photos'}</h4>
+                  <div className="space-y-3">
+                    <input type="text" value={adminUpName} onChange={e => setAdminUpName(e.target.value)} className={iCls} placeholder={lang === 'ja' ? '投稿者名' : 'Uploader name'} {...imeHandlers} />
+                    <input type="file" accept="image/*" multiple onChange={doAdminUpFiles} id="admin-photo-upload" className="hidden" />
+                    <label htmlFor="admin-photo-upload" className="w-full px-4 py-3 bg-white border-2 border-dashed border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-100 hover:border-neutral-400 transition-all flex items-center justify-center gap-2 cursor-pointer"><Upload size={16} /> {lang === 'ja' ? '写真を選択' : 'Select Photos'}</label>
+                    {adminUpImgs.length > 0 && (
+                      <div className="grid grid-cols-5 gap-2">
+                        {adminUpImgs.map((img, i) => (
+                          <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200">
+                            <img src={img} alt="" className="w-full h-full object-cover" />
+                            <button onClick={() => setAdminUpImgs(adminUpImgs.filter((_, j) => j !== i))} className="absolute top-1 right-1 w-5 h-5 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/80"><X size={12} className="text-white" /></button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <button onClick={doAdminUpload} disabled={!adminUpImgs.length || !adminUpName || isComposing} className="w-full py-2.5 text-sm font-semibold shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed" style={btnS}>{lang === 'ja' ? 'アップロード' : 'Upload'}</button>
+                  </div>
+                </div>
+
+                {/* 写真一覧 */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {photos.map(p => (
                     <div key={p.id} className="relative group aspect-square rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200">
                       <img src={p.url} alt="" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button onClick={() => startEditPhoto(p)} className="p-2 bg-white text-neutral-700 rounded-lg hover:bg-neutral-100"><Pencil size={16} /></button>
                         <button onClick={() => deletePhoto(p.id)} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"><Trash2 size={16} /></button>
                       </div>
                       <div className="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-sm rounded px-2 py-1">
@@ -914,6 +956,26 @@ ${schedT}
                   ))}
                   {!photos.length && <div className="col-span-full text-center text-neutral-400 text-sm py-8">{lang === 'ja' ? 'まだ写真がありません' : 'No photos yet'}</div>}
                 </div>
+
+                {/* 写真編集モーダル */}
+                {editPhotoId && (
+                  <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={() => setEditPhotoId(null)}>
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    <div className="relative bg-white max-w-sm w-full p-6 shadow-2xl rounded-xl" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => setEditPhotoId(null)} className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700"><X size={18} /></button>
+                      <h3 className="font-semibold mb-4 flex items-center gap-2"><Pencil size={16} /> {lang === 'ja' ? '写真を編集' : 'Edit Photo'}</h3>
+                      <div className="space-y-4">
+                        <Field label={lang === 'ja' ? '投稿者名' : 'Uploader Name'}>
+                          <input type="text" value={editPhotoName} onChange={e => setEditPhotoName(e.target.value)} className={iCls} {...imeHandlers} />
+                        </Field>
+                        <div className="flex gap-2">
+                          <button onClick={saveEditPhoto} disabled={!editPhotoName || isComposing} className="flex-1 py-2.5 text-sm font-semibold shadow-md active:scale-[0.98] transition-all disabled:opacity-40" style={btnS}>{lang === 'ja' ? '保存' : 'Save'}</button>
+                          <button onClick={() => setEditPhotoId(null)} className="px-4 py-2.5 text-sm font-medium border border-neutral-200 rounded-lg hover:bg-neutral-50">{lang === 'ja' ? 'キャンセル' : 'Cancel'}</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -984,8 +1046,8 @@ ${schedT}
               <input type="text" value={uName} onChange={e => setUName(e.target.value)} className={iCls} placeholder={t('name_placeholder')} {...imeHandlers} />
             </Field>
             <Field label={`${lang === 'ja' ? '写真' : 'Photos'} (${t('max_photos')})`}>
-              <input type="file" accept="image/*" multiple onChange={doFiles} ref={fileRef} className="hidden" />
-              <button onClick={() => fileRef.current?.click()} className="w-full px-4 py-3 bg-neutral-50 border-2 border-dashed border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-100 hover:border-neutral-400 transition-all flex items-center justify-center gap-2"><Upload size={16} /> {lang === 'ja' ? '写真を選択' : 'Select Photos'}</button>
+              <input type="file" accept="image/*" multiple onChange={doFiles} id="photo-upload-input" className="hidden" />
+              <label htmlFor="photo-upload-input" className="w-full px-4 py-3 bg-neutral-50 border-2 border-dashed border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-100 hover:border-neutral-400 transition-all flex items-center justify-center gap-2 cursor-pointer"><Upload size={16} /> {lang === 'ja' ? '写真を選択' : 'Select Photos'}</label>
               {uImgs.length > 0 && (
                 <div className="mt-3 grid grid-cols-5 gap-2">
                   {uImgs.map((img, i) => (
@@ -1061,9 +1123,9 @@ ${schedT}
 
       {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
 
-      {!isAdmin && !['home', 'rsvp', 'telegram', 'gallery', 'media'].includes(page) && (
-        <div className="fixed bottom-6 left-6 z-[30]">
-          <button onClick={() => go('login')} className="px-4 py-2 bg-white/90 backdrop-blur-lg border border-neutral-200 shadow-lg rounded-full text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:shadow-xl transition-all flex items-center gap-1.5"><Lock size={12} /> {t('admin_login_link')}</button>
+      {!isAdmin && (
+        <div className="fixed bottom-6 left-4 z-[50]">
+          <button onClick={() => go('login')} className="w-9 h-9 bg-white/80 backdrop-blur-lg border border-neutral-200 shadow-lg rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:shadow-xl transition-all"><Lock size={14} /></button>
         </div>
       )}
 
