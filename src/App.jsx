@@ -251,13 +251,13 @@ export default function App() {
   const mapEmbed = `https://www.google.com/maps?q=${encodeURIComponent(cfg.address)}&output=embed`;
 
   const slideItems = useMemo(() => [
-    ...photos.map(p => ({ ...p, _t: 'img' })),
+    ...photos.filter(p => !p.url || !p.url.startsWith('__video:')).map(p => ({ ...p, _t: 'img' })),
     ...msgs.map(m => ({ ...m, _t: 'msg' })),
   ].sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0)), [photos, msgs]);
 
   useEffect(() => {
     if (slide < 0 || !slideItems.length) return;
-    const t = setInterval(() => setSlide(p => (p + 1) % slideItems.length), 6000);
+    const t = setInterval(() => setSlide(p => (p + 1) % slideItems.length), 2000);
     return () => clearInterval(t);
   }, [slide, slideItems.length]);
 
@@ -1296,7 +1296,13 @@ ${schedT}
           <button onClick={() => setSlide(-1)} className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/20"><X size={20} /></button>
           <div className="h-full flex items-center justify-center p-8">
             {slideItems[slide]._t === 'img' ? (
-              <img src={slideItems[slide].url} alt="" className="max-w-full max-h-full object-contain" />
+              <div className="relative max-w-full max-h-full flex flex-col items-center">
+                <img src={slideItems[slide].url} alt="" className="max-w-full max-h-[80vh] object-contain rounded-lg" />
+                <div className="mt-3 flex items-center gap-3 text-white/80">
+                  <button onClick={e => { e.stopPropagation(); doLike(slideItems[slide].id); }} className="flex items-center gap-1.5 text-sm hover:text-white transition-colors"><Heart size={16} className={slideItems[slide].likes > 0 ? 'fill-current text-rose-400' : ''} /> {slideItems[slide].likes || 0}</button>
+                  <span className="text-sm font-medium">{slideItems[slide].name}</span>
+                </div>
+              </div>
             ) : (
               <div className="max-w-2xl w-full bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-white">
                 <div className="flex items-center gap-3 mb-4">
