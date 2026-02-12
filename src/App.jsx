@@ -178,6 +178,7 @@ export default function App() {
   const [editPhotoName, setEditPhotoName] = useState('');
   const [adminUpImgs, setAdminUpImgs] = useState([]);
   const [adminUpName, setAdminUpName] = useState('');
+  const [selPhotos, setSelPhotos] = useState([]);
 
   const fileRef = useRef(null);
   const topRef = useRef(null);
@@ -357,6 +358,24 @@ ${schedT}
     if (!editPhotoName || !editPhotoId) return;
     if (store.updatePhoto) { await store.updatePhoto(editPhotoId, { name: editPhotoName }); }
     setEditPhotoId(null); setEditPhotoName(''); notify(lang === 'ja' ? '更新しました' : 'Updated');
+  };
+  const toggleSelPhoto = (id) => setSelPhotos(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  const selectAllPhotos = () => setSelPhotos(selPhotos.length === photos.length ? [] : photos.map(p => p.id));
+  const deleteSelPhotos = async () => {
+    if (!selPhotos.length) return;
+    for (const id of selPhotos) { await deletePhoto(id); }
+    setSelPhotos([]); notify(lang === 'ja' ? `${selPhotos.length}枚削除しました` : `Deleted ${selPhotos.length} photos`);
+  };
+  const downloadPhoto = async (url, name) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${name || 'photo'}_${Date.now()}.jpg`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch { window.open(url, '_blank'); }
   };
   const startEditSched = (s) => { setEditSchedId(s.id); setEditSchedTime(s.time); setEditSchedTitle(s.title); };
   const saveEditSched = async () => { if (!editSchedTime || !editSchedTitle || isComposing) return; await updateSchedule(editSchedId, editSchedTime, editSchedTitle); setEditSchedId(null); notify('更新'); };
@@ -939,21 +958,46 @@ ${schedT}
                   </div>
                 </div>
 
+                {/* 一括操作バー */}
+                {photos.length > 0 && (
+                  <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <button onClick={selectAllPhotos} className="px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-all flex items-center gap-1.5">
+                      <Check size={12} /> {selPhotos.length === photos.length ? (lang === 'ja' ? '全解除' : 'Deselect All') : (lang === 'ja' ? '全選択' : 'Select All')}
+                    </button>
+                    {selPhotos.length > 0 && (
+                      <>
+                        <span className="text-xs text-neutral-500">{selPhotos.length}{lang === 'ja' ? '枚選択中' : ' selected'}</span>
+                        <button onClick={deleteSelPhotos} className="px-3 py-1.5 text-xs font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 active:scale-95 transition-all flex items-center gap-1.5"><Trash2 size={12} /> {lang === 'ja' ? '一括削除' : 'Delete Selected'}</button>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {/* 写真一覧 */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {photos.map(p => (
-                    <div key={p.id} className="relative group aspect-square rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200">
-                      <img src={p.url} alt="" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <button onClick={() => startEditPhoto(p)} className="p-2 bg-white text-neutral-700 rounded-lg hover:bg-neutral-100"><Pencil size={16} /></button>
-                        <button onClick={() => deletePhoto(p.id)} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"><Trash2 size={16} /></button>
+                  {photos.map(p => {
+                    const isSel = selPhotos.includes(p.id);
+                    return (
+                      <div key={p.id} className={`relative aspect-square rounded-lg overflow-hidden bg-neutral-100 border-2 transition-all ${isSel ? 'border-rose-500 ring-2 ring-rose-200' : 'border-neutral-200'}`}>
+                        <img src={p.url} alt="" className="w-full h-full object-cover" />
+                        {/* チェックボックス（常時表示） */}
+                        <button onClick={() => toggleSelPhoto(p.id)} className={`absolute top-2 left-2 w-6 h-6 rounded-md flex items-center justify-center transition-all ${isSel ? 'bg-rose-500 text-white' : 'bg-black/40 text-white/80 hover:bg-black/60'}`}>
+                          {isSel && <Check size={14} />}
+                        </button>
+                        {/* アクションボタン（常時表示） */}
+                        <div className="absolute top-2 right-2 flex flex-col gap-1">
+                          <button onClick={() => downloadPhoto(p.url, p.name)} className="w-7 h-7 bg-black/50 backdrop-blur-sm text-white rounded-lg flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all" title={lang === 'ja' ? 'ダウンロード' : 'Download'}><Download size={13} /></button>
+                          <button onClick={() => startEditPhoto(p)} className="w-7 h-7 bg-black/50 backdrop-blur-sm text-white rounded-lg flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all" title={lang === 'ja' ? '編集' : 'Edit'}><Pencil size={13} /></button>
+                          <button onClick={() => { deletePhoto(p.id); setSelPhotos(s => s.filter(x => x !== p.id)); }} className="w-7 h-7 bg-red-500/80 backdrop-blur-sm text-white rounded-lg flex items-center justify-center hover:bg-red-600 active:scale-95 transition-all" title={lang === 'ja' ? '削除' : 'Delete'}><Trash2 size={13} /></button>
+                        </div>
+                        {/* 投稿者情報 */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-2 pt-6">
+                          <div className="text-white text-xs truncate">{p.name}</div>
+                          <div className="text-white/70 text-[10px] flex items-center gap-1"><Heart size={10} /> {p.likes || 0}</div>
+                        </div>
                       </div>
-                      <div className="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-sm rounded px-2 py-1">
-                        <div className="text-white text-xs truncate">{p.name}</div>
-                        <div className="text-white/70 text-[10px] flex items-center gap-1"><Heart size={10} /> {p.likes || 0}</div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {!photos.length && <div className="col-span-full text-center text-neutral-400 text-sm py-8">{lang === 'ja' ? 'まだ写真がありません' : 'No photos yet'}</div>}
                 </div>
 
@@ -1124,8 +1168,8 @@ ${schedT}
       {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
 
       {!isAdmin && (
-        <div className="fixed bottom-6 left-4 z-[50]">
-          <button onClick={() => go('login')} className="w-9 h-9 bg-white/80 backdrop-blur-lg border border-neutral-200 shadow-lg rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:shadow-xl transition-all"><Lock size={14} /></button>
+        <div className="fixed bottom-20 md:bottom-6 left-4 z-[50]">
+          <button onClick={() => go('login')} className="w-10 h-10 bg-neutral-800 text-white shadow-lg rounded-full flex items-center justify-center hover:bg-neutral-700 hover:shadow-xl active:scale-95 transition-all"><Lock size={15} /></button>
         </div>
       )}
 
