@@ -439,9 +439,9 @@ ${schedT}
 
       <div className={`${cfg.announcement ? 'pt-8' : ''} ${isGuestPage ? 'md:pt-14' : ''} pb-24 md:pb-8`}>
         {/* HOME */}
-      {page === 'home' && (
+        {page === 'home' && (
           <div className="fin">
-            <div className="relative min-h-[92vh] md:min-h-[calc(100vh-3.5rem)] flex items-center justify-center overflow-hidden bg-white">
+            <div className="relative flex items-center justify-center overflow-hidden bg-white" style={{ minHeight: 'calc(100vh - 3.5rem)' }}>
               {cfg.topImg ? (<div className="absolute inset-0"><img src={cfg.topImg} className="w-full h-full object-cover opacity-25 scale-105 blur-[1px]" alt="" /><div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/30 to-neutral-50" /></div>) : <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]"><Heart size={480} style={{ color: T.c }} /></div>}
               <div className="relative z-10 max-w-xl px-6 text-center">
                 <p className="tracking-[.5em] text-[11px] uppercase mb-5 font-medium" style={{ color: T.c + 'aa' }}>{cfg.heroSub}</p>
@@ -521,7 +521,7 @@ ${schedT}
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* RSVP */}
