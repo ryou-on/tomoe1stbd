@@ -397,7 +397,7 @@ ${schedT}
       {isGuestPage && (
         <nav className={`hidden md:block fixed top-0 inset-x-0 z-[80] bg-white border-b border-neutral-100 shadow-sm ${cfg.announcement ? 'mt-8' : ''}`}>
           <div className="max-w-4xl mx-auto flex items-center justify-between px-6 h-14">
-            <span className="text-sm font-semibold" style={{ color: T.c }}>{cfg.name}{lang === 'ja' ? 'の生誕祭' : '\'s Birthday'}</span>
+            <span className="text-sm font-semibold" style={{ color: T.c }}>{lang === 'en' ? (cfg.nameEn || 'Tomoe') : cfg.name}{lang === 'ja' ? 'の生誕祭' : '\'s Birthday'}</span>
             <div className="flex gap-1">{guestNavs.map(n => (
               <button key={n.id} onClick={() => go(n.id)} className={`flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium rounded-lg transition-all ${page === n.id ? 'text-white shadow-md' : 'text-neutral-500 hover:bg-neutral-50'}`} style={page === n.id ? { backgroundColor: T.c } : {}}><n.icon size={14} />{n.l}</button>
             ))}</div>
@@ -445,8 +445,8 @@ ${schedT}
               {cfg.topImg ? (<div className="absolute inset-0"><img src={cfg.topImg} className="w-full h-full object-cover opacity-25 scale-105 blur-[1px]" alt="" /><div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/30 to-neutral-50" /></div>) : <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]"><Heart size={480} style={{ color: T.c }} /></div>}
               <div className="relative z-10 max-w-xl px-6 text-center">
                 <p className="tracking-[.5em] text-[11px] uppercase mb-5 font-medium" style={{ color: T.c + 'aa' }}>{cfg.heroSub}</p>
-                <h1 className="text-5xl md:text-8xl font-light text-neutral-900 mb-3 tracking-tight leading-none" style={lang === 'en' ? { textTransform: 'uppercase' } : {}}>{cfg.name}</h1>
-                <p className="text-2xl md:text-4xl font-light mb-3 tracking-tight" style={{ color: T.c }}>{age} {t('birthday_congrats')}</p>
+                <h1 className="text-5xl md:text-8xl font-light text-neutral-900 mb-3 tracking-tight leading-none">{lang === 'en' ? (cfg.nameEn || 'TOMOE') : cfg.name}</h1>
+                <p className="text-2xl md:text-4xl font-light mb-3 tracking-tight" style={{ color: T.c }}>{age} {lang === 'en' ? (age === 1 ? 'year old' : 'years old') : t('birthday_congrats')}</p>
                 <p className="text-sm md:text-base text-neutral-500 mb-10 tracking-wide">{new Date(cfg.eventDate).toLocaleDateString(lang === 'ja' ? 'ja-JP' : 'en-US', { year: "numeric", month: "long", day: "numeric" })}</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button onClick={() => go('rsvp')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>{t('rsvp_button')}</button>
