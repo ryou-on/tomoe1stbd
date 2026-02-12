@@ -94,6 +94,42 @@ const Field = ({ label, children }) => (
 );
 
 /* ✅ Modal を App の外で定義（安定した参照でフォーカス消失を防止） */
+
+/* ✅ IME対応バッファ付き入力 — 変換中はFirestore書き込みを抑止 */
+const BufferedInput = ({ value, onSave, className, placeholder, type = 'text', ...rest }) => {
+  const [local, setLocal] = useState(value);
+  const composing = useRef(false);
+  const saved = useRef(value);
+  useEffect(() => { if (!composing.current) { setLocal(value); saved.current = value; } }, [value]);
+  const flush = (v) => { if (v !== saved.current) { saved.current = v; onSave(v); } };
+  const handleKeyDown = (e) => { if (e.key === 'Enter' && !composing.current) { e.target.blur(); } };
+  return type === 'textarea' ? (
+    <textarea
+      value={local}
+      onChange={e => setLocal(e.target.value)}
+      onCompositionStart={() => { composing.current = true; }}
+      onCompositionEnd={e => { composing.current = false; setLocal(e.target.value); }}
+      onBlur={() => flush(local)}
+      className={className}
+      placeholder={placeholder}
+      {...rest}
+    />
+  ) : (
+    <input
+      type={type}
+      value={local}
+      onChange={e => setLocal(e.target.value)}
+      onCompositionStart={() => { composing.current = true; }}
+      onCompositionEnd={e => { composing.current = false; setLocal(e.target.value); }}
+      onBlur={() => flush(local)}
+      onKeyDown={handleKeyDown}
+      className={className}
+      placeholder={placeholder}
+      {...rest}
+    />
+  );
+};
+
 const Modal = ({ children, onClose, wide, borderRadius }) => (
   <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -736,7 +772,7 @@ ${schedT}
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><Settings size={16} /> {lang === 'ja' ? '基本設定' : 'Basic Settings'}</h3>
-                  <Field label={lang === 'ja' ? 'お子様の名前' : 'Child Name'}><input type="text" value={cfg.name} onChange={e => sc({ name: e.target.value })} className={iCls} {...imeHandlers} /></Field>
+                  <Field label={lang === 'ja' ? 'お子様の名前' : 'Child Name'}><BufferedInput value={cfg.name} onSave={v => sc({ name: v })} className={iCls} /></Field>
                   <Field label={lang === 'ja' ? '生年月日' : 'Birth Date'}><input type="date" value={cfg.birthDate} onChange={e => sc({ birthDate: e.target.value })} className={iCls} /></Field>
                   <Field label={lang === 'ja' ? 'イベント日' : 'Event Date'}><input type="date" value={cfg.eventDate} onChange={e => sc({ eventDate: e.target.value })} className={iCls} /></Field>
                   <Field label={lang === 'ja' ? 'RSVP締切' : 'RSVP Deadline'}><input type="date" value={cfg.rsvpDeadline} onChange={e => sc({ rsvpDeadline: e.target.value })} className={iCls} /></Field>
@@ -753,22 +789,22 @@ ${schedT}
                   </Field>
                   <Field label={lang === 'ja' ? 'トップ画像' : 'Hero Image'}>
                     <div className="space-y-2">
-                      <input type="file" accept="image/*" onChange={doTopImg} ref={topRef} className="hidden" />
-                      <button onClick={() => topRef.current?.click()} className="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg text-sm font-medium hover:bg-neutral-100 flex items-center justify-center gap-2"><Upload size={14} /> {lang === 'ja' ? 'アップロード' : 'Upload'}</button>
+                      <input type="file" accept="image/*" onChange={doTopImg} id="top-img-upload" className="hidden" />
+                      <label htmlFor="top-img-upload" className="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg text-sm font-medium hover:bg-neutral-100 flex items-center justify-center gap-2 cursor-pointer"><Upload size={14} /> {lang === 'ja' ? 'アップロード' : 'Upload'}</label>
                       {cfg.topImg && <img src={cfg.topImg} alt="" className="w-full h-32 object-cover rounded-lg" />}
                     </div>
                   </Field>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><MapPin size={16} /> {lang === 'ja' ? '会場情報' : 'Venue'}</h3>
-                  <Field label={lang === 'ja' ? '会場名' : 'Venue Name'}><input type="text" value={cfg.venue} onChange={e => sc({ venue: e.target.value })} className={iCls} {...imeHandlers} /></Field>
-                  <Field label={lang === 'ja' ? '住所' : 'Address'}><input type="text" value={cfg.address} onChange={e => sc({ address: e.target.value })} className={iCls} {...imeHandlers} /></Field>
+                  <Field label={lang === 'ja' ? '会場名' : 'Venue Name'}><BufferedInput value={cfg.venue} onSave={v => sc({ venue: v })} className={iCls} /></Field>
+                  <Field label={lang === 'ja' ? '住所' : 'Address'}><BufferedInput value={cfg.address} onSave={v => sc({ address: v })} className={iCls} /></Field>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><Gift size={16} /> {lang === 'ja' ? 'リンク' : 'Links'}</h3>
-                  <Field label={lang === 'ja' ? 'Amazon欲しいものリスト' : 'Amazon Wishlist'}><input type="url" value={cfg.amazonUrl} onChange={e => sc({ amazonUrl: e.target.value })} className={iCls} {...imeHandlers} /></Field>
-                  <Field label={lang === 'ja' ? 'YouTube URL' : 'YouTube URL'}><input type="url" value={cfg.youtubeUrl} onChange={e => sc({ youtubeUrl: e.target.value })} className={iCls} {...imeHandlers} /></Field>
-                  <Field label={lang === 'ja' ? '楽譜 URL' : 'Score URL'}><input type="url" value={cfg.scoreUrl} onChange={e => sc({ scoreUrl: e.target.value })} className={iCls} {...imeHandlers} /></Field>
+                  <Field label={lang === 'ja' ? 'Amazon欲しいものリスト' : 'Amazon Wishlist'}><BufferedInput value={cfg.amazonUrl} onSave={v => sc({ amazonUrl: v })} className={iCls} /></Field>
+                  <Field label={lang === 'ja' ? 'YouTube URL' : 'YouTube URL'}><BufferedInput value={cfg.youtubeUrl} onSave={v => sc({ youtubeUrl: v })} className={iCls} /></Field>
+                  <Field label={lang === 'ja' ? '楽譜 URL' : 'Score URL'}><BufferedInput value={cfg.scoreUrl} onSave={v => sc({ scoreUrl: v })} className={iCls} /></Field>
                   <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
                     <input type="checkbox" checked={cfg.showMediaPage} onChange={e => sc({ showMediaPage: e.target.checked })} className="w-4 h-4 rounded" />
                     {lang === 'ja' ? 'メディアページを表示' : 'Show Media Page'}
@@ -776,7 +812,7 @@ ${schedT}
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><Mail size={16} /> {lang === 'ja' ? 'メール設定' : 'Email Settings'}</h3>
-                  <Field label={lang === 'ja' ? '送信者名' : 'Sender Name'}><input type="text" value={cfg.senderName} onChange={e => sc({ senderName: e.target.value })} className={iCls} {...imeHandlers} /></Field>
+                  <Field label={lang === 'ja' ? '送信者名' : 'Sender Name'}><BufferedInput value={cfg.senderName} onSave={v => sc({ senderName: v })} className={iCls} /></Field>
                   <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
                     <input type="checkbox" checked={cfg.autoReplyEnabled} onChange={e => sc({ autoReplyEnabled: e.target.checked })} className="w-4 h-4 rounded" />
                     {lang === 'ja' ? 'AI自動返信を有効化' : 'Enable AI Auto-Reply'}
@@ -784,12 +820,12 @@ ${schedT}
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><Bell size={16} /> {lang === 'ja' ? 'お知らせバー' : 'Announcement'}</h3>
-                  <Field label={lang === 'ja' ? 'アナウンスメント（空欄で非表示）' : 'Announcement (leave blank to hide)'}><input type="text" value={cfg.announcement} onChange={e => sc({ announcement: e.target.value })} className={iCls} placeholder={lang === 'ja' ? '例: 当日は雨予報です' : 'e.g. Rain expected on the day'} {...imeHandlers} /></Field>
+                  <Field label={lang === 'ja' ? 'アナウンスメント（空欄で非表示）' : 'Announcement (leave blank to hide)'}><BufferedInput value={cfg.announcement} onSave={v => sc({ announcement: v })} className={iCls} placeholder={lang === 'ja' ? '例: 当日は雨予報です' : 'e.g. Rain expected on the day'} /></Field>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><Lock size={16} /> {lang === 'ja' ? 'セキュリティ' : 'Security'}</h3>
-                  <Field label={lang === 'ja' ? '管理者ID' : 'Admin ID'}><input type="text" value={cfg.adminId} onChange={e => sc({ adminId: e.target.value })} className={iCls} {...imeHandlers} /></Field>
-                  <Field label={lang === 'ja' ? 'パスワード' : 'Password'}><input type="password" value={cfg.adminPass} onChange={e => sc({ adminPass: e.target.value })} className={iCls} {...imeHandlers} /></Field>
+                  <Field label={lang === 'ja' ? '管理者ID' : 'Admin ID'}><BufferedInput value={cfg.adminId} onSave={v => sc({ adminId: v })} className={iCls} /></Field>
+                  <Field label={lang === 'ja' ? 'パスワード' : 'Password'}><BufferedInput type="password" value={cfg.adminPass} onSave={v => sc({ adminPass: v })} className={iCls} /></Field>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><Database size={16} /> {lang === 'ja' ? 'データ管理' : 'Data Management'}</h3>
