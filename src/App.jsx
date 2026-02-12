@@ -558,6 +558,36 @@ ${schedT}
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-neutral-400 sb"><span className="text-[10px] tracking-[.3em] uppercase font-medium">{t('scroll')}</span><ChevronDown size={15} /></div>
             </div>
 
+            {/* 写真カルーセル */}
+            {photos.filter(p => !p.url?.startsWith('__video:')).length > 0 && (
+              <div className="py-10 md:py-16 overflow-hidden">
+                <div className="mb-6 text-center">
+                  <button onClick={() => go('gallery')} className="text-xs font-semibold tracking-[.2em] uppercase hover:underline" style={{ color: T.c + 'aa' }}>
+                    {lang === 'ja' ? '📷 みんなの写真' : '📷 Guest Photos'}
+                  </button>
+                </div>
+                <div className="relative">
+                  <div className="flex gap-3 overflow-x-auto pb-4 px-6 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+                    {photos.filter(p => !p.url?.startsWith('__video:')).map(p => (
+                      <div key={p.id} className="snap-center shrink-0 w-48 md:w-64 aspect-square rounded-xl overflow-hidden bg-neutral-100 shadow-md hover:shadow-xl transition-all cursor-pointer relative group" onClick={() => setSlide(photos.indexOf(p))}>
+                        <img src={p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute bottom-2 left-3 right-3">
+                            <div className="text-white text-xs font-medium">{p.name}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {/* ギャラリーへのリンクカード */}
+                    <div className="snap-center shrink-0 w-48 md:w-64 aspect-square rounded-xl overflow-hidden border-2 border-dashed border-neutral-200 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-neutral-400 hover:bg-neutral-50 transition-all" onClick={() => go('gallery')}>
+                      <Camera size={28} className="text-neutral-300" />
+                      <span className="text-xs font-medium text-neutral-400">{lang === 'ja' ? 'もっと見る →' : 'View all →'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* お知らせ */}
             <div className="max-w-3xl mx-auto px-6 py-16 md:py-24">
               <ST title={t('updates')} />
@@ -1275,6 +1305,7 @@ ${schedT}
         @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
         .sb { animation: bounce 2s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );
