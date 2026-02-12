@@ -208,6 +208,9 @@ export default function App() {
   const [newNewsTitle, setNewNewsTitle] = useState('');
   const [newNewsContent, setNewNewsContent] = useState('');
 
+  const [showScore, setShowScore] = useState(false);
+  const [uVideoUrl, setUVideoUrl] = useState('');
+
   const [selGuests, setSelGuests] = useState([]);
 
   const [editPhotoId, setEditPhotoId] = useState(null);
@@ -373,16 +376,27 @@ ${schedT}
   };
 
   const [uploading, setUploading] = useState(false);
-  const doFiles = async e => { const f = Array.from(e.target.files).slice(0, 10); if (!f.length) return; setUImgs(await Promise.all(f.map(x => compress(x)))); };
+  const doFiles = async e => { const f = Array.from(e.target.files).slice(0, 10); if (!f.length) return; setUImgs(await Promise.all(f.map(x => compress(x)))); e.target.value = ''; };
   const doUpload = async () => {
-    if (!uImgs.length || !uName || isComposing || uploading) return;
-    setUploading(true);
+    if ((!uImgs.length && !uVideoUrl) || !uName || isComposing || uploading) return;
+    const imgs = [...uImgs]; const name = uName; const videoUrl = uVideoUrl;
+    setUploading(true); setUImgs([]);
     try {
-      await submitPhotos(uName, uImgs);
-      setUName(''); setUImgs([]); setShowUp(false); notify(t('photo_shared'));
+      if (imgs.length) await submitPhotos(name, imgs);
+      if (videoUrl) {
+        const embed = videoUrl.includes('youtu') ? videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/') : videoUrl.includes('vimeo') ? videoUrl.replace('vimeo.com/', 'player.vimeo.com/video/') : videoUrl;
+        if (store.submitMessage) {
+          // Store video as a special message with video flag, or use photos collection
+        }
+        // Add video to photos collection with type marker
+        if (store.addVideo) { await store.addVideo(name, embed); }
+        else if (submitPhotos) { await submitPhotos(name, ['__video:' + embed]); }
+      }
+      setUName(''); setUVideoUrl(''); setShowUp(false); notify(t('photo_shared'));
     } catch (err) {
-      console.error('Photo upload error:', err);
-      notify(lang === 'ja' ? 'アップロードに失敗しました: ' + (err.message || '不明なエラー') : 'Upload failed: ' + (err.message || 'Unknown error'));
+      console.error('Upload error:', err);
+      setUImgs(imgs);
+      notify(lang === 'ja' ? 'アップロード失敗: ' + (err.message || '') : 'Upload failed: ' + (err.message || ''));
     } finally { setUploading(false); }
   };
   const doTopImg = async e => { const f = e.target.files[0]; if (!f) return; const d = await compress(f, 0.5); const url = await uploadImage(d, 'topImage/hero.jpg'); sc({ topImg: url }); notify('更新'); };
@@ -390,15 +404,17 @@ ${schedT}
 
   const doAddSched = async () => { if (!newSchedTime || !newSchedTitle || isComposing) return; await addSchedule(newSchedTime, newSchedTitle); setNewSchedTime(''); setNewSchedTitle(''); setShowSchedForm(false); notify('追加'); };
 
-  const doAdminUpFiles = async e => { const f = Array.from(e.target.files).slice(0, 10); if (!f.length) return; setAdminUpImgs(await Promise.all(f.map(x => compress(x)))); };
+  const doAdminUpFiles = async e => { const f = Array.from(e.target.files).slice(0, 10); if (!f.length) return; setAdminUpImgs(await Promise.all(f.map(x => compress(x)))); e.target.value = ''; };
   const doAdminUpload = async () => {
     if (!adminUpImgs.length || !adminUpName || isComposing || uploading) return;
-    setUploading(true);
+    const imgs = [...adminUpImgs]; const name = adminUpName;
+    setUploading(true); setAdminUpImgs([]);
     try {
-      await submitPhotos(adminUpName, adminUpImgs);
-      setAdminUpName(''); setAdminUpImgs([]); notify(lang === 'ja' ? '写真を追加しました' : 'Photos added');
+      await submitPhotos(name, imgs);
+      setAdminUpName(''); notify(lang === 'ja' ? '写真を追加しました' : 'Photos added');
     } catch (err) {
       console.error('Admin photo upload error:', err);
+      setAdminUpImgs(imgs);
       notify(lang === 'ja' ? 'アップロード失敗: ' + (err.message || '') : 'Upload failed: ' + (err.message || ''));
     } finally { setUploading(false); }
   };
@@ -685,24 +701,35 @@ ${schedT}
         {/* GALLERY */}
         {page === 'gallery' && (
           <div className="max-w-4xl mx-auto px-6 py-12 md:py-20">
-            <ST title={t('gallery_title')} />
+            <ST title={lang === 'ja' ? '思い出の写真・動画館' : 'Photo & Video Gallery'} />
             <div className="mb-8 flex flex-wrap justify-center gap-3">
               <button onClick={() => photos.length && setSlide(0)} disabled={!photos.length} className="px-5 py-2.5 text-sm font-medium bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"><Play size={14} /> {t('slideshow')}</button>
-              <button onClick={() => setShowUp(true)} className="px-5 py-2.5 text-sm font-semibold shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center gap-2" style={btnS}><Upload size={14} /> {t('upload_photo')}</button>
+              <button onClick={() => setShowUp(true)} className="px-5 py-2.5 text-sm font-semibold shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center gap-2" style={btnS}><Upload size={14} /> {lang === 'ja' ? '投稿する' : 'Upload'}</button>
             </div>
             {photos.length ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {photos.map(p => (
-                  <div key={p.id} className="relative group aspect-square rounded-xl overflow-hidden bg-neutral-100 shadow-sm hover:shadow-lg transition-all cursor-pointer" onClick={() => setSlide(photos.indexOf(p))}>
-                    <img src={p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <div className="text-white text-xs font-medium mb-1">{p.name}</div>
-                        <button onClick={e => { e.stopPropagation(); doLike(p.id); }} className="flex items-center gap-1 text-white/90 text-xs"><Heart size={12} className={p.likes > 0 ? 'fill-current' : ''} /> {p.likes || 0}</button>
+                {photos.map(p => {
+                  const isVideo = p.url && p.url.startsWith('__video:');
+                  const videoSrc = isVideo ? p.url.replace('__video:', '') : null;
+                  return (
+                    <div key={p.id} className="relative group aspect-square rounded-xl overflow-hidden bg-neutral-100 shadow-sm hover:shadow-lg transition-all cursor-pointer" onClick={() => !isVideo && setSlide(photos.indexOf(p))}>
+                      {isVideo ? (
+                        <div className="w-full h-full flex items-center justify-center bg-neutral-900">
+                          <iframe src={videoSrc} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="video" />
+                        </div>
+                      ) : (
+                        <img src={p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <div className="text-white text-xs font-medium mb-1">{p.name}</div>
+                          {!isVideo && <div className="flex items-center gap-1 text-white/90 text-xs pointer-events-auto" onClick={e => { e.stopPropagation(); doLike(p.id); }}><Heart size={12} className={p.likes > 0 ? 'fill-current' : ''} /> {p.likes || 0}</div>}
+                          {isVideo && <div className="text-white/70 text-[10px] flex items-center gap-1"><Play size={10} /> {lang === 'ja' ? '動画' : 'Video'}</div>}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-16">
@@ -729,16 +756,16 @@ ${schedT}
               {cfg.scoreUrl && (
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-5">
                   <h3 className="font-semibold mb-3 flex items-center gap-2"><FileUp size={16} style={{ color: T.c }} /> {t('scores')}</h3>
-                  <a href={cfg.scoreUrl} target="_blank" rel="noopener noreferrer" className="block p-4 bg-neutral-50 rounded-lg border border-neutral-200 hover:bg-neutral-100 transition-colors">
+                  <button onClick={() => setShowScore(true)} className="w-full p-4 bg-neutral-50 rounded-lg border border-neutral-200 hover:bg-neutral-100 transition-colors text-left">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center"><FileUp size={18} className="text-neutral-600" /></div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-neutral-900 truncate">{lang === 'ja' ? '楽譜を見る' : 'View Score'}</div>
                         <div className="text-xs text-neutral-500">PDF</div>
                       </div>
-                      <ExternalLink size={14} className="text-neutral-400" />
+                      <Eye size={14} className="text-neutral-400" />
                     </div>
-                  </a>
+                  </button>
                 </div>
               )}
             </div>
@@ -1132,8 +1159,8 @@ ${schedT}
       )}
 
       {showUp && (
-        <Modal onClose={() => setShowUp(false)} borderRadius={T.cr}>
-          <ST title={t('upload_modal_title')} />
+        <Modal onClose={() => { setShowUp(false); setUVideoUrl(''); }} borderRadius={T.cr}>
+          <ST title={lang === 'ja' ? '写真・動画を投稿' : 'Upload Photos & Videos'} />
           <div className="space-y-4">
             <Field label={t('uploader_name')}>
               <input type="text" value={uName} onChange={e => setUName(e.target.value)} className={iCls} placeholder={t('name_placeholder')} {...imeHandlers} />
@@ -1152,7 +1179,11 @@ ${schedT}
                 </div>
               )}
             </Field>
-            <button onClick={doUpload} disabled={!uImgs.length || !uName || isComposing || uploading} className="w-full py-3 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2" style={btnS}>{uploading ? <><Loader2 size={16} className="animate-spin" /> {lang === 'ja' ? 'アップロード中...' : 'Uploading...'}</> : t('upload_button')}</button>
+            <Field label={lang === 'ja' ? '動画URL（YouTube等・任意）' : 'Video URL (YouTube etc. - optional)'}>
+              <input type="url" value={uVideoUrl} onChange={e => setUVideoUrl(e.target.value)} className={iCls} placeholder="https://www.youtube.com/watch?v=..." {...imeHandlers} />
+              {uVideoUrl && <p className="text-[11px] text-neutral-400 mt-1">{lang === 'ja' ? '※ YouTube, Vimeo等の共有URLに対応' : 'Supports YouTube, Vimeo share URLs'}</p>}
+            </Field>
+            <button onClick={doUpload} disabled={(!uImgs.length && !uVideoUrl) || !uName || isComposing || uploading} className="w-full py-3 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2" style={btnS}>{uploading ? <><Loader2 size={16} className="animate-spin" /> {lang === 'ja' ? 'アップロード中...' : 'Uploading...'}</> : (lang === 'ja' ? '投稿する' : 'Submit')}</button>
           </div>
         </Modal>
       )}
@@ -1212,6 +1243,22 @@ ${schedT}
           <div className="p-5 bg-neutral-50 rounded-xl border border-neutral-200 text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap">{aiResult.text}</div>
           <button onClick={() => copyTxt(aiResult.text)} className="mt-4 w-full py-2.5 bg-white border border-neutral-200 text-sm font-medium rounded-lg hover:bg-neutral-50 flex items-center justify-center gap-2"><Copy size={14} /> {lang === 'ja' ? 'コピー' : 'Copy'}</button>
         </Modal>
+      )}
+
+      {showScore && cfg.scoreUrl && (
+        <div className="fixed inset-0 z-[200] flex flex-col" onClick={() => setShowScore(false)}>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          <div className="relative flex-1 flex flex-col m-3 md:m-6 rounded-xl overflow-hidden bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 bg-neutral-100 border-b border-neutral-200">
+              <h3 className="text-sm font-semibold text-neutral-700 flex items-center gap-2"><FileUp size={15} /> {lang === 'ja' ? '楽譜' : 'Sheet Music'}</h3>
+              <div className="flex items-center gap-2">
+                <a href={cfg.scoreUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs font-medium text-neutral-600 border border-neutral-300 rounded-lg hover:bg-neutral-200 flex items-center gap-1"><ExternalLink size={12} /> {lang === 'ja' ? '新しいタブで開く' : 'Open in new tab'}</a>
+                <button onClick={() => setShowScore(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-200 text-neutral-500 hover:text-neutral-700"><X size={18} /></button>
+              </div>
+            </div>
+            <iframe src={cfg.scoreUrl} className="flex-1 w-full" title="Score PDF" />
+          </div>
+        </div>
       )}
 
       {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
