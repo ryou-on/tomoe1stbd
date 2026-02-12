@@ -210,6 +210,8 @@ export default function App() {
 
   const [showScore, setShowScore] = useState(false);
   const [uVideoUrl, setUVideoUrl] = useState('');
+  const [newEmbedTitle, setNewEmbedTitle] = useState('');
+  const [newEmbedUrl, setNewEmbedUrl] = useState('');
 
   const [selGuests, setSelGuests] = useState([]);
 
@@ -400,6 +402,18 @@ ${schedT}
     } finally { setUploading(false); }
   };
   const doTopImg = async e => { const f = e.target.files[0]; if (!f) return; const d = await compress(f, 0.5); const url = await uploadImage(d, 'topImage/hero.jpg'); sc({ topImg: url }); notify('更新'); };
+  const doScorePdf = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (f.type !== 'application/pdf') { notify(lang === 'ja' ? 'PDFファイルを選択してください' : 'Please select a PDF file'); return; }
+    notify(lang === 'ja' ? 'アップロード中...' : 'Uploading...');
+    try {
+      const reader = new FileReader();
+      const dataUrl = await new Promise((res, rej) => { reader.onload = () => res(reader.result); reader.onerror = rej; reader.readAsDataURL(f); });
+      const url = await uploadImage(dataUrl, 'scores/score.pdf');
+      sc({ scoreUrl: url }); notify(lang === 'ja' ? '楽譜をアップロードしました' : 'Score uploaded');
+    } catch (err) { console.error(err); notify(lang === 'ja' ? 'アップロード失敗' : 'Upload failed'); }
+    e.target.value = '';
+  };
   const doLike = (id) => { const p = photos.find(x => x.id === id); if (p) likePhoto(id, p.likes); };
 
   const doAddSched = async () => { if (!newSchedTime || !newSchedTitle || isComposing) return; await addSchedule(newSchedTime, newSchedTitle); setNewSchedTime(''); setNewSchedTitle(''); setShowSchedForm(false); notify('追加'); };
@@ -774,12 +788,12 @@ ${schedT}
         {page === 'media' && (
           <div className="max-w-4xl mx-auto px-6 py-12 md:py-20">
             <ST title={t('media_title')} sub={t('media_subtitle')} />
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-6">
               {cfg.youtubeUrl && (
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-5">
                   <h3 className="font-semibold mb-3 flex items-center gap-2"><Play size={16} style={{ color: T.c }} /> {t('songs')}</h3>
                   <div className="aspect-video rounded-lg overflow-hidden bg-neutral-100">
-                    <iframe src={cfg.youtubeUrl.replace('watch?v=', 'embed/')} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="video" />
+                    <iframe src={cfg.youtubeUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="video" />
                   </div>
                 </div>
               )}
@@ -796,6 +810,20 @@ ${schedT}
                       <Eye size={14} className="text-neutral-400" />
                     </div>
                   </button>
+                </div>
+              )}
+              {(cfg.mediaEmbeds || []).map((m, i) => (
+                <div key={i} className="bg-white rounded-xl shadow-sm border border-neutral-100 p-5">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2"><Play size={16} style={{ color: T.c }} /> {m.title}</h3>
+                  <div className="aspect-video rounded-lg overflow-hidden bg-neutral-100">
+                    <iframe src={m.url} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title={m.title} />
+                  </div>
+                </div>
+              ))}
+              {!cfg.youtubeUrl && !cfg.scoreUrl && !(cfg.mediaEmbeds || []).length && (
+                <div className="text-center py-16">
+                  <Play size={48} className="mx-auto mb-4 text-neutral-300" />
+                  <p className="text-neutral-400 text-sm">{lang === 'ja' ? 'メディアはまだありません' : 'No media yet'}</p>
                 </div>
               )}
             </div>
@@ -874,11 +902,34 @@ ${schedT}
                   <h3 className="font-semibold flex items-center gap-2"><Gift size={16} /> {lang === 'ja' ? 'リンク' : 'Links'}</h3>
                   <Field label={lang === 'ja' ? 'Amazon欲しいものリスト' : 'Amazon Wishlist'}><BufferedInput value={cfg.amazonUrl} onSave={v => sc({ amazonUrl: v })} className={iCls} /></Field>
                   <Field label={lang === 'ja' ? 'YouTube URL' : 'YouTube URL'}><BufferedInput value={cfg.youtubeUrl} onSave={v => sc({ youtubeUrl: v })} className={iCls} /></Field>
-                  <Field label={lang === 'ja' ? '楽譜 URL' : 'Score URL'}><BufferedInput value={cfg.scoreUrl} onSave={v => sc({ scoreUrl: v })} className={iCls} /></Field>
+                  <Field label={lang === 'ja' ? '楽譜PDF' : 'Score PDF'}>
+                    {cfg.scoreUrl && <div className="mb-2 text-xs text-emerald-600 flex items-center gap-1"><CheckCircle2 size={12} /> {lang === 'ja' ? 'アップロード済み' : 'Uploaded'}</div>}
+                    <input type="file" accept="application/pdf" onChange={doScorePdf} id="score-pdf-upload" className="hidden" />
+                    <label htmlFor="score-pdf-upload" className="w-full px-4 py-3 bg-neutral-50 border-2 border-dashed border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-100 hover:border-neutral-400 transition-all flex items-center justify-center gap-2 cursor-pointer"><Upload size={16} /> {lang === 'ja' ? 'PDFをアップロード' : 'Upload PDF'}</label>
+                    {cfg.scoreUrl && <button onClick={() => sc({ scoreUrl: '' })} className="mt-2 text-xs text-red-500 hover:text-red-700">{lang === 'ja' ? '楽譜を削除' : 'Remove score'}</button>}
+                  </Field>
                   <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
                     <input type="checkbox" checked={cfg.showMediaPage} onChange={e => sc({ showMediaPage: e.target.checked })} className="w-4 h-4 rounded" />
                     {lang === 'ja' ? 'メディアページを表示' : 'Show Media Page'}
                   </label>
+                </div>
+                <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2"><Layout size={16} /> {lang === 'ja' ? 'メディア（iframe埋め込み）' : 'Media Embeds (iframe)'}</h3>
+                  <p className="text-xs text-neutral-500">{lang === 'ja' ? 'YouTube, Spotify, SoundCloud, Google Maps等の埋め込みURLを追加できます' : 'Add embed URLs from YouTube, Spotify, SoundCloud, Google Maps, etc.'}</p>
+                  {(cfg.mediaEmbeds || []).map((m, i) => (
+                    <div key={i} className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-neutral-700 truncate flex-1">{m.title || `Media ${i + 1}`}</span>
+                        <button onClick={() => { const arr = [...(cfg.mediaEmbeds || [])]; arr.splice(i, 1); sc({ mediaEmbeds: arr }); }} className="p-1 hover:bg-red-50 rounded"><Trash2 size={14} className="text-red-500" /></button>
+                      </div>
+                      <div className="text-xs text-neutral-400 truncate">{m.url}</div>
+                    </div>
+                  ))}
+                  <div className="space-y-2 p-3 bg-neutral-50 rounded-lg border border-dashed border-neutral-300">
+                    <input type="text" value={newEmbedTitle} onChange={e => setNewEmbedTitle(e.target.value)} className={iCls} placeholder={lang === 'ja' ? 'タイトル（例: テーマソング）' : 'Title (e.g. Theme Song)'} {...imeHandlers} />
+                    <input type="url" value={newEmbedUrl} onChange={e => setNewEmbedUrl(e.target.value)} className={iCls} placeholder={lang === 'ja' ? '埋め込みURL（iframe srcのURL）' : 'Embed URL (iframe src)'} />
+                    <button onClick={() => { if (!newEmbedUrl) return; const arr = [...(cfg.mediaEmbeds || []), { title: newEmbedTitle || 'Media', url: newEmbedUrl }]; sc({ mediaEmbeds: arr }); setNewEmbedTitle(''); setNewEmbedUrl(''); notify(lang === 'ja' ? '追加しました' : 'Added'); }} disabled={!newEmbedUrl} className="w-full py-2 text-sm font-semibold active:scale-[0.98] transition-all disabled:opacity-40" style={btnS}><Plus size={14} className="inline mr-1" /> {lang === 'ja' ? 'メディアを追加' : 'Add Media'}</button>
+                  </div>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><Mail size={16} /> {lang === 'ja' ? 'メール設定' : 'Email Settings'}</h3>
