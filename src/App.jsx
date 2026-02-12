@@ -372,11 +372,18 @@ ${schedT}
     setMName(''); setMText(''); setShowMsg(false); go('telegram'); notify(t('message_sent'));
   };
 
+  const [uploading, setUploading] = useState(false);
   const doFiles = async e => { const f = Array.from(e.target.files).slice(0, 10); if (!f.length) return; setUImgs(await Promise.all(f.map(x => compress(x)))); };
   const doUpload = async () => {
-    if (!uImgs.length || !uName || isComposing) return;
-    await submitPhotos(uName, uImgs);
-    setUName(''); setUImgs([]); setShowUp(false); notify(t('photo_shared'));
+    if (!uImgs.length || !uName || isComposing || uploading) return;
+    setUploading(true);
+    try {
+      await submitPhotos(uName, uImgs);
+      setUName(''); setUImgs([]); setShowUp(false); notify(t('photo_shared'));
+    } catch (err) {
+      console.error('Photo upload error:', err);
+      notify(lang === 'ja' ? 'アップロードに失敗しました: ' + (err.message || '不明なエラー') : 'Upload failed: ' + (err.message || 'Unknown error'));
+    } finally { setUploading(false); }
   };
   const doTopImg = async e => { const f = e.target.files[0]; if (!f) return; const d = await compress(f, 0.5); const url = await uploadImage(d, 'topImage/hero.jpg'); sc({ topImg: url }); notify('更新'); };
   const doLike = (id) => { const p = photos.find(x => x.id === id); if (p) likePhoto(id, p.likes); };
@@ -385,9 +392,15 @@ ${schedT}
 
   const doAdminUpFiles = async e => { const f = Array.from(e.target.files).slice(0, 10); if (!f.length) return; setAdminUpImgs(await Promise.all(f.map(x => compress(x)))); };
   const doAdminUpload = async () => {
-    if (!adminUpImgs.length || !adminUpName || isComposing) return;
-    await submitPhotos(adminUpName, adminUpImgs);
-    setAdminUpName(''); setAdminUpImgs([]); notify(lang === 'ja' ? '写真を追加しました' : 'Photos added');
+    if (!adminUpImgs.length || !adminUpName || isComposing || uploading) return;
+    setUploading(true);
+    try {
+      await submitPhotos(adminUpName, adminUpImgs);
+      setAdminUpName(''); setAdminUpImgs([]); notify(lang === 'ja' ? '写真を追加しました' : 'Photos added');
+    } catch (err) {
+      console.error('Admin photo upload error:', err);
+      notify(lang === 'ja' ? 'アップロード失敗: ' + (err.message || '') : 'Upload failed: ' + (err.message || ''));
+    } finally { setUploading(false); }
   };
   const startEditPhoto = (p) => { setEditPhotoId(p.id); setEditPhotoName(p.name || ''); };
   const saveEditPhoto = async () => {
@@ -1139,7 +1152,7 @@ ${schedT}
                 </div>
               )}
             </Field>
-            <button onClick={doUpload} disabled={!uImgs.length || !uName || isComposing} className="w-full py-3 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed" style={btnS}>{t('upload_button')}</button>
+            <button onClick={doUpload} disabled={!uImgs.length || !uName || isComposing || uploading} className="w-full py-3 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2" style={btnS}>{uploading ? <><Loader2 size={16} className="animate-spin" /> {lang === 'ja' ? 'アップロード中...' : 'Uploading...'}</> : t('upload_button')}</button>
           </div>
         </Modal>
       )}
