@@ -379,28 +379,33 @@ ${schedT}
   };
 
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const doFiles = async e => { const f = Array.from(e.target.files).slice(0, 10); if (!f.length) return; setUImgs(await Promise.all(f.map(x => compress(x)))); e.target.value = ''; };
   const doUpload = async () => {
     if ((!uImgs.length && !uVideoUrl) || !uName || isComposing || uploading) return;
     const imgs = [...uImgs]; const name = uName; const videoUrl = uVideoUrl;
-    setUploading(true); setUImgs([]);
+    const totalItems = imgs.length + (videoUrl ? 1 : 0);
+    setUploading(true); setUImgs([]); setUploadProgress({ current: 0, total: totalItems });
     try {
-      if (imgs.length) await submitPhotos(name, imgs);
+      // 写真を1枚ずつアップロード
+      for (let i = 0; i < imgs.length; i++) {
+        setUploadProgress({ current: i, total: totalItems });
+        await submitPhotos(name, [imgs[i]]);
+      }
+      // 動画URL
       if (videoUrl) {
+        setUploadProgress({ current: imgs.length, total: totalItems });
         const embed = videoUrl.includes('youtu') ? videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/') : videoUrl.includes('vimeo') ? videoUrl.replace('vimeo.com/', 'player.vimeo.com/video/') : videoUrl;
-        if (store.submitMessage) {
-          // Store video as a special message with video flag, or use photos collection
-        }
-        // Add video to photos collection with type marker
         if (store.addVideo) { await store.addVideo(name, embed); }
         else if (submitPhotos) { await submitPhotos(name, ['__video:' + embed]); }
       }
+      setUploadProgress({ current: totalItems, total: totalItems });
       setUName(''); setUVideoUrl(''); setShowUp(false); notify(t('photo_shared'));
     } catch (err) {
       console.error('Upload error:', err);
       setUImgs(imgs);
       notify(lang === 'ja' ? 'アップロード失敗: ' + (err.message || '') : 'Upload failed: ' + (err.message || ''));
-    } finally { setUploading(false); }
+    } finally { setUploading(false); setUploadProgress({ current: 0, total: 0 }); }
   };
   const doTopImg = async e => { const f = e.target.files[0]; if (!f) return; const d = await compress(f, 0.5); const url = await uploadImage(d, 'topImage/hero.jpg'); sc({ topImg: url }); notify('更新'); };
   const doScorePdf = async e => {
@@ -423,15 +428,19 @@ ${schedT}
   const doAdminUpload = async () => {
     if (!adminUpImgs.length || !adminUpName || isComposing || uploading) return;
     const imgs = [...adminUpImgs]; const name = adminUpName;
-    setUploading(true); setAdminUpImgs([]);
+    setUploading(true); setAdminUpImgs([]); setUploadProgress({ current: 0, total: imgs.length });
     try {
-      await submitPhotos(name, imgs);
+      for (let i = 0; i < imgs.length; i++) {
+        setUploadProgress({ current: i, total: imgs.length });
+        await submitPhotos(name, [imgs[i]]);
+      }
+      setUploadProgress({ current: imgs.length, total: imgs.length });
       setAdminUpName(''); notify(lang === 'ja' ? '写真を追加しました' : 'Photos added');
     } catch (err) {
       console.error('Admin photo upload error:', err);
       setAdminUpImgs(imgs);
       notify(lang === 'ja' ? 'アップロード失敗: ' + (err.message || '') : 'Upload failed: ' + (err.message || ''));
-    } finally { setUploading(false); }
+    } finally { setUploading(false); setUploadProgress({ current: 0, total: 0 }); }
   };
   const startEditPhoto = (p) => { setEditPhotoId(p.id); setEditPhotoName(p.name || ''); };
   const saveEditPhoto = async () => {
@@ -1305,7 +1314,18 @@ ${schedT}
               <input type="url" value={uVideoUrl} onChange={e => setUVideoUrl(e.target.value)} className={iCls} placeholder="https://www.youtube.com/watch?v=..." {...imeHandlers} />
               {uVideoUrl && <p className="text-[11px] text-neutral-400 mt-1">{lang === 'ja' ? '※ YouTube, Vimeo等の共有URLに対応' : 'Supports YouTube, Vimeo share URLs'}</p>}
             </Field>
-            <button onClick={doUpload} disabled={(!uImgs.length && !uVideoUrl) || !uName || isComposing || uploading} className="w-full py-3 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2" style={btnS}>{uploading ? <><Loader2 size={16} className="animate-spin" /> {lang === 'ja' ? 'アップロード中...' : 'Uploading...'}</> : (lang === 'ja' ? '投稿する' : 'Submit')}</button>
+            {uploading && uploadProgress.total > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs text-neutral-500">
+                  <span>{lang === 'ja' ? 'アップロード中...' : 'Uploading...'}</span>
+                  <span>{uploadProgress.current + 1 > uploadProgress.total ? uploadProgress.total : uploadProgress.current + 1} / {uploadProgress.total}</span>
+                </div>
+                <div className="w-full h-2 bg-neutral-200 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-300 ease-out" style={{ width: `${Math.min(((uploadProgress.current + 0.5) / uploadProgress.total) * 100, 100)}%`, backgroundColor: T.c }} />
+                </div>
+              </div>
+            )}
+            <button onClick={doUpload} disabled={(!uImgs.length && !uVideoUrl) || !uName || isComposing || uploading} className="w-full py-3 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2" style={btnS}>{uploading ? <><Loader2 size={16} className="animate-spin" /> {lang === 'ja' ? `アップロード中 (${uploadProgress.current + 1}/${uploadProgress.total})` : `Uploading (${uploadProgress.current + 1}/${uploadProgress.total})`}</> : (lang === 'ja' ? '投稿する' : 'Submit')}</button>
           </div>
         </Modal>
       )}
