@@ -257,9 +257,10 @@ export default function App() {
 
   useEffect(() => {
     if (slide < 0 || !slideItems.length) return;
-    const t = setInterval(() => setSlide(p => (p + 1) % slideItems.length), 2000);
+    const ms = (cfg.slideInterval || 2.7) * 1000;
+    const t = setInterval(() => setSlide(p => (p + 1) % slideItems.length), ms);
     return () => clearInterval(t);
-  }, [slide, slideItems.length]);
+  }, [slide, slideItems.length, cfg.slideInterval]);
 
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const compress = (file, q = 0.45) => new Promise(res => {
@@ -557,7 +558,7 @@ ${schedT}
         {/* HOME */}
         {page === 'home' && (
           <div className="fin">
-            <div className="relative flex items-center justify-center overflow-hidden bg-white" style={{ minHeight: 'calc(100vh - 3.5rem)' }}>
+            <div className="relative flex items-center justify-center overflow-hidden bg-white" style={{ minHeight: 'min(70vh, 520px)' }}>
               {cfg.topImg ? (<div className="absolute inset-0"><img src={cfg.topImg} className="w-full h-full object-cover opacity-25 scale-105 blur-[1px]" alt="" /><div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/30 to-neutral-50" /></div>) : <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]"><Heart size={480} style={{ color: T.c }} /></div>}
               <div className="relative z-10 max-w-xl px-6 text-center">
                 <p className="tracking-[.5em] text-[11px] uppercase mb-5 font-medium" style={{ color: T.c + 'aa' }}>{cfg.heroSub}</p>
@@ -781,9 +782,9 @@ ${schedT}
                       ) : (
                         <img src={p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       )}
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2.5 py-2 pt-8">
-                        <div className="text-white text-xs font-medium truncate">{p.name}</div>
-                        <div className="flex items-center gap-2 mt-0.5">
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 py-2.5 pt-10">
+                        <div className="text-white text-[13px] font-semibold truncate drop-shadow-sm">{p.name}</div>
+                        <div className="flex items-center gap-2 mt-1">
                           {!isVideo && <button className="flex items-center gap-1 text-white/80 text-[11px] hover:text-white" onClick={e => { e.stopPropagation(); doLike(p.id); }}><Heart size={11} className={p.likes > 0 ? 'fill-current text-rose-400' : ''} /> {p.likes || 0}</button>}
                           {isVideo && <span className="text-white/60 text-[10px] flex items-center gap-1"><Play size={10} /> {lang === 'ja' ? '動画' : 'Video'}</span>}
                         </div>
@@ -946,6 +947,12 @@ ${schedT}
                     <input type="checkbox" checked={cfg.showMediaPage} onChange={e => sc({ showMediaPage: e.target.checked })} className="w-4 h-4 rounded" />
                     {lang === 'ja' ? 'メディアページを表示' : 'Show Media Page'}
                   </label>
+                  <Field label={lang === 'ja' ? 'スライドショー間隔（秒）' : 'Slideshow Interval (seconds)'}>
+                    <div className="flex items-center gap-3">
+                      <input type="range" min="1" max="10" step="0.1" value={cfg.slideInterval || 2.7} onChange={e => sc({ slideInterval: parseFloat(e.target.value) })} className="flex-1" />
+                      <span className="text-sm font-semibold min-w-[3rem] text-right" style={{ color: T.c }}>{(cfg.slideInterval || 2.7).toFixed(1)}s</span>
+                    </div>
+                  </Field>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><Layout size={16} /> {lang === 'ja' ? 'メディア（iframe埋め込み）' : 'Media Embeds (iframe)'}</h3>
