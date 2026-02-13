@@ -442,7 +442,7 @@ ${schedT}
       notify(lang === 'ja' ? 'アップロード失敗: ' + (err.message || '') : 'Upload failed: ' + (err.message || ''));
     } finally { setUploading(false); setUploadProgress({ current: 0, total: 0 }); }
   };
-  const startEditPhoto = (p) => { setEditPhotoId(p.id); setEditPhotoName(p.name || ''); };
+  const startEditPhoto = (p) => { setEditPhotoId(p.id); setEditPhotoName((p.uploader || p.name || '')); };
   const saveEditPhoto = async () => {
     if (!editPhotoName || !editPhotoId) return;
     if (store.updatePhoto) { await store.updatePhoto(editPhotoId, { name: editPhotoName }); }
@@ -597,7 +597,7 @@ ${schedT}
                         <img src={p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="absolute bottom-2 left-3 right-3">
-                            <div className="text-white text-xs font-medium">{p.name}</div>
+                            <div className="text-white text-xs font-medium">{(p.uploader || p.name)}</div>
                           </div>
                         </div>
                       </div>
@@ -792,10 +792,10 @@ ${schedT}
                         <img src={p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       )}
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 py-2.5 pt-10">
-                        <div className="text-white text-[13px] font-semibold truncate drop-shadow-sm">{p.name}</div>
-                        <div className="flex items-center gap-2 mt-1">
-                          {!isVideo && <button className="flex items-center gap-1 text-white/80 text-[11px] hover:text-white" onClick={e => { e.stopPropagation(); doLike(p.id); }}><Heart size={11} className={p.likes > 0 ? 'fill-current text-rose-400' : ''} /> {p.likes || 0}</button>}
-                          {isVideo && <span className="text-white/60 text-[10px] flex items-center gap-1"><Play size={10} /> {lang === 'ja' ? '動画' : 'Video'}</span>}
+                        <div className="flex items-center gap-2">
+                          {!isVideo && <button className="flex items-center gap-1 text-white/90 text-[12px] hover:text-white" onClick={e => { e.stopPropagation(); doLike(p.id); }}><Heart size={13} className={p.likes > 0 ? 'fill-current text-rose-400' : ''} /> {p.likes || 0}</button>}
+                          {isVideo && <span className="text-white/60 text-[11px] flex items-center gap-1"><Play size={11} /> {lang === 'ja' ? '動画' : 'Video'}</span>}
+                          <span className="text-white text-[12px] font-semibold truncate drop-shadow-sm">{(p.uploader || p.name)}</span>
                         </div>
                       </div>
                     </div>
@@ -1193,13 +1193,13 @@ ${schedT}
                         </button>
                         {/* アクションボタン（常時表示） */}
                         <div className="absolute top-2 right-2 flex flex-col gap-1">
-                          <button onClick={() => downloadPhoto(p.url, p.name)} className="w-7 h-7 bg-black/50 backdrop-blur-sm text-white rounded-lg flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all" title={lang === 'ja' ? 'ダウンロード' : 'Download'}><Download size={13} /></button>
+                          <button onClick={() => downloadPhoto(p.url, (p.uploader || p.name))} className="w-7 h-7 bg-black/50 backdrop-blur-sm text-white rounded-lg flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all" title={lang === 'ja' ? 'ダウンロード' : 'Download'}><Download size={13} /></button>
                           <button onClick={() => startEditPhoto(p)} className="w-7 h-7 bg-black/50 backdrop-blur-sm text-white rounded-lg flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all" title={lang === 'ja' ? '編集' : 'Edit'}><Pencil size={13} /></button>
                           <button onClick={() => { deletePhoto(p.id); setSelPhotos(s => s.filter(x => x !== p.id)); }} className="w-7 h-7 bg-red-500/80 backdrop-blur-sm text-white rounded-lg flex items-center justify-center hover:bg-red-600 active:scale-95 transition-all" title={lang === 'ja' ? '削除' : 'Delete'}><Trash2 size={13} /></button>
                         </div>
                         {/* 投稿者情報 */}
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-2 pt-6">
-                          <div className="text-white text-xs truncate">{p.name}</div>
+                          <div className="text-white text-xs truncate">{(p.uploader || p.name)}</div>
                           <div className="text-white/70 text-[10px] flex items-center gap-1"><Heart size={10} /> {p.likes || 0}</div>
                         </div>
                       </div>
@@ -1361,7 +1361,7 @@ ${schedT}
                 <img src={slideItems[slide].url} alt="" className="max-w-full max-h-[80vh] object-contain rounded-lg" />
                 <div className="mt-3 flex items-center gap-3 text-white/80">
                   <button onClick={e => { e.stopPropagation(); doLike(slideItems[slide].id); }} className="flex items-center gap-1.5 text-sm hover:text-white transition-colors"><Heart size={16} className={slideItems[slide].likes > 0 ? 'fill-current text-rose-400' : ''} /> {slideItems[slide].likes || 0}</button>
-                  <span className="text-sm font-medium">{slideItems[slide].name}</span>
+                  <span className="text-sm font-medium">{slideItems[slide].uploader || slideItems[slide].name}</span>
                 </div>
               </div>
             ) : (
