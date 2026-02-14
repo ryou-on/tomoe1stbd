@@ -904,8 +904,16 @@ ${schedT}
               <button onClick={() => { setIsAdmin(false); go('home'); }} className="px-4 py-2 text-sm font-medium text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50"><X size={14} className="inline mr-1" /> {lang === 'ja' ? '閉じる' : 'Close'}</button>
             </div>
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              {['settings', 'schedule', 'news', 'rsvps', 'messages', 'photos', 'emails'].map(tab => (
-                <button key={tab} onClick={() => setATab(tab)} className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all ${aTab === tab ? 'bg-rose-600 text-white shadow-md' : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50'}`}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>
+              {[
+                { id: 'settings', ja: '設定', en: 'Settings' },
+                { id: 'schedule', ja: 'スケジュール', en: 'Schedule' },
+                { id: 'news', ja: 'お知らせ', en: 'News' },
+                { id: 'rsvps', ja: '参加者', en: 'RSVPs' },
+                { id: 'messages', ja: '電報', en: 'Messages' },
+                { id: 'photos', ja: '写真', en: 'Photos' },
+                { id: 'emails', ja: 'メール', en: 'Emails' },
+              ].map(tab => (
+                <button key={tab.id} onClick={() => setATab(tab.id)} className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all ${aTab === tab.id ? 'bg-rose-600 text-white shadow-md' : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50'}`}>{lang === 'ja' ? tab.ja : tab.en}</button>
               ))}
             </div>
 
