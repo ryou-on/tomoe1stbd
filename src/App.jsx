@@ -246,7 +246,7 @@ export default function App() {
     return Math.max(0, a);
   }, [cfg.birthDate, cfg.eventDate]);
 
-  const closed = useMemo(() => new Date() > new Date(cfg.rsvpDeadline), [cfg.rsvpDeadline]);
+  const closed = useMemo(() => cfg.rsvpEnabled === false || new Date() > new Date(cfg.rsvpDeadline), [cfg.rsvpDeadline, cfg.rsvpEnabled]);
   const mapUrl = `https://www.google.com/maps/search/${encodeURIComponent(cfg.address)}`;
   const mapEmbed = `https://www.google.com/maps?q=${encodeURIComponent(cfg.address)}&output=embed`;
 
@@ -492,7 +492,7 @@ ${schedT}
 
   const guestNavs = [
     { id: 'home', icon: Calendar, l: t('nav_home') },
-    { id: 'rsvp', icon: Send, l: t('nav_rsvp') },
+    ...(!closed ? [{ id: 'rsvp', icon: Send, l: t('nav_rsvp') }] : []),
     { id: 'telegram', icon: Heart, l: t('nav_telegram') },
     { id: 'gallery', icon: Camera, l: t('nav_gallery') },
     ...(cfg.showMediaPage ? [{ id: 'media', icon: Play, l: t('nav_media') }] : []),
@@ -575,7 +575,7 @@ ${schedT}
                 <p className="text-2xl md:text-4xl font-light mb-3 tracking-tight" style={{ color: T.c }}>{age} {lang === 'en' ? (age === 1 ? 'year old' : 'years old') : t('birthday_congrats')}</p>
                 <p className="text-sm md:text-base text-neutral-500 mb-10 tracking-wide">{new Date(cfg.eventDate).toLocaleDateString(lang === 'ja' ? 'ja-JP' : 'en-US', { year: "numeric", month: "long", day: "numeric" })}</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <button onClick={() => go('rsvp')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>{t('rsvp_button')}</button>
+                  {!closed && <button onClick={() => go('rsvp')} className="px-7 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all" style={btnS}>{t('rsvp_button')}</button>}
                   <button onClick={() => setShowMsg(true)} className="px-7 py-3.5 text-sm font-semibold bg-white border border-neutral-200 shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" style={{ borderRadius: T.r, color: T.c }}><MessageSquare size={15} /> {t('send_message')}</button>
                 </div>
               </div>
@@ -918,6 +918,15 @@ ${schedT}
                   <Field label={lang === 'ja' ? '生年月日' : 'Birth Date'}><input type="date" value={cfg.birthDate} onChange={e => sc({ birthDate: e.target.value })} className={iCls} /></Field>
                   <Field label={lang === 'ja' ? 'イベント日' : 'Event Date'}><input type="date" value={cfg.eventDate} onChange={e => sc({ eventDate: e.target.value })} className={iCls} /></Field>
                   <Field label={lang === 'ja' ? 'RSVP締切' : 'RSVP Deadline'}><input type="date" value={cfg.rsvpDeadline} onChange={e => sc({ rsvpDeadline: e.target.value })} className={iCls} /></Field>
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-neutral-200 bg-neutral-50">
+                    <div>
+                      <div className="text-sm font-medium text-neutral-700">{lang === 'ja' ? '参加表明の受付' : 'RSVP Accepting'}</div>
+                      <div className="text-xs text-neutral-400">{lang === 'ja' ? 'オフにするとナビ・ボタンが非表示になります' : 'Hides RSVP nav & buttons when off'}</div>
+                    </div>
+                    <button onClick={() => sc({ rsvpEnabled: cfg.rsvpEnabled === false ? true : false })} className={`relative w-12 h-7 rounded-full transition-colors ${cfg.rsvpEnabled === false ? 'bg-neutral-300' : 'bg-emerald-500'}`}>
+                      <div className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${cfg.rsvpEnabled === false ? 'left-0.5' : 'left-[1.375rem]'}`} />
+                    </button>
+                  </div>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-6 space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><Palette size={16} /> {lang === 'ja' ? 'デザイン' : 'Design'}</h3>
